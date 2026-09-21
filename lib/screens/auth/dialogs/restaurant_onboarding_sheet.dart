@@ -2,9 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:palette_generator/palette_generator.dart';
-import '../services/supabase_service.dart';
+import 'package:splash_screen/data/repositories/supabase_repository.dart';
+import 'package:splash_screen/screens/restaurant/restaurant_dashboard_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'restaurant_dashboard.dart';
 
 class OnboardingSheet extends StatefulWidget {
   const OnboardingSheet({super.key});
@@ -16,11 +16,11 @@ class OnboardingSheet extends StatefulWidget {
 class _OnboardingSheetState extends State<OnboardingSheet> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-  
+
   // State variables
   File? _logoImage;
   List<Color> _extractedColors = [];
-  List<Color> _selectedColors = [];
+  final List<Color> _selectedColors = [];
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descController = TextEditingController();
 
@@ -44,22 +44,31 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
 
   Future<void> _extractColors() async {
     if (_logoImage == null) return;
-    final PaletteGenerator paletteGenerator = await PaletteGenerator.fromImageProvider(
-      FileImage(_logoImage!),
-    );
-    
+    final PaletteGenerator paletteGenerator =
+        await PaletteGenerator.fromImageProvider(FileImage(_logoImage!));
+
     final colors = <Color>{};
-    if (paletteGenerator.dominantColor != null) colors.add(paletteGenerator.dominantColor!.color);
-    if (paletteGenerator.vibrantColor != null) colors.add(paletteGenerator.vibrantColor!.color);
-    if (paletteGenerator.mutedColor != null) colors.add(paletteGenerator.mutedColor!.color);
-    if (paletteGenerator.darkVibrantColor != null) colors.add(paletteGenerator.darkVibrantColor!.color);
-    if (paletteGenerator.lightVibrantColor != null) colors.add(paletteGenerator.lightVibrantColor!.color);
-    
+    if (paletteGenerator.dominantColor != null) {
+      colors.add(paletteGenerator.dominantColor!.color);
+    }
+    if (paletteGenerator.vibrantColor != null) {
+      colors.add(paletteGenerator.vibrantColor!.color);
+    }
+    if (paletteGenerator.mutedColor != null) {
+      colors.add(paletteGenerator.mutedColor!.color);
+    }
+    if (paletteGenerator.darkVibrantColor != null) {
+      colors.add(paletteGenerator.darkVibrantColor!.color);
+    }
+    if (paletteGenerator.lightVibrantColor != null) {
+      colors.add(paletteGenerator.lightVibrantColor!.color);
+    }
+
     // Fallback if not enough colors extracted
     if (colors.length < 4) {
       colors.addAll(paletteGenerator.colors.take(4 - colors.length));
     }
-    
+
     setState(() {
       _extractedColors = colors.toList();
       _selectedColors.clear();
@@ -80,11 +89,15 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
 
   Future<void> _completeOnboarding() async {
     if (_selectedColors.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select exactly 4 colors.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select exactly 4 colors.')),
+      );
       return;
     }
     if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter restaurant name.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter restaurant name.')),
+      );
       return;
     }
 
@@ -94,13 +107,13 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       final userId = Supabase.instance.client.auth.currentUser!.id;
       final intColors = _selectedColors.map((c) => c.value).toList();
 
-      await SupabaseService().completeOnboarding(
-        userId, 
-        intColors, 
-        _nameController.text, 
+      await SupabaseRepository().completeOnboarding(
+        userId,
+        intColors,
+        _nameController.text,
         _descController.text,
       );
-      
+
       if (mounted) {
         Navigator.of(context).pop(); // Close bottom sheet
         Navigator.of(context).pushAndRemoveUntil(
@@ -109,7 +122,11 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
         );
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     } finally {
       setState(() => _isLoading = false);
     }
@@ -117,16 +134,23 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
 
   void _nextPage() {
     if (_currentPage == 0 && _logoImage == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please upload a logo first.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please upload a logo first.')),
+      );
       return;
     }
     if (_currentPage == 1 && _selectedColors.length < 4) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select 4 colors.')));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select 4 colors.')));
       return;
     }
-    
+
     if (_currentPage < 2) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
     } else {
       _completeOnboarding();
     }
@@ -159,8 +183,18 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('Setup Restaurant', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
-                  IconButton(icon: const Icon(Icons.close, color: Colors.black54), onPressed: () => Navigator.pop(context)),
+                  const Text(
+                    'Setup Restaurant',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.black54),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                 ],
               ),
             ),
@@ -186,13 +220,28 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black87,
                   minimumSize: const Size(double.infinity, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5),
+                  ),
                 ),
-                child: _isLoading 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                  : Text(_currentPage == 2 ? 'Complete Setup' : 'Next', style: const TextStyle(color: Colors.white, fontSize: 16)),
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        _currentPage == 2 ? 'Complete Setup' : 'Next',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -205,7 +254,11 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Upload your restaurant logo to generate your custom theme.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+          const Text(
+            'Upload your restaurant logo to generate your custom theme.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black54),
+          ),
           const SizedBox(height: 40),
           GestureDetector(
             onTap: _pickImage,
@@ -216,11 +269,22 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                 color: Colors.grey.shade100,
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(100),
-                image: _logoImage != null ? DecorationImage(image: FileImage(_logoImage!), fit: BoxFit.cover) : null,
+                image: _logoImage != null
+                    ? DecorationImage(
+                        image: FileImage(_logoImage!),
+                        fit: BoxFit.cover,
+                      )
+                    : null,
               ),
-              child: _logoImage == null ? const Icon(Icons.camera_alt, size: 50, color: Colors.black26) : null,
+              child: _logoImage == null
+                  ? const Icon(
+                      Icons.camera_alt,
+                      size: 50,
+                      color: Colors.black26,
+                    )
+                  : null,
             ),
-          )
+          ),
         ],
       ),
     );
@@ -232,7 +296,11 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text('Select exactly 4 colors for your app theme.', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+          const Text(
+            'Select exactly 4 colors for your app theme.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.black54),
+          ),
           const SizedBox(height: 20),
           Wrap(
             spacing: 10,
@@ -249,16 +317,25 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                   decoration: BoxDecoration(
                     color: color,
                     shape: BoxShape.circle,
-                    border: isSelected ? Border.all(color: Colors.black, width: 3) : null,
+                    border: isSelected
+                        ? Border.all(color: Colors.black, width: 3)
+                        : null,
                     boxShadow: [
-                      if (isSelected) BoxShadow(color: color.withOpacity(0.5), blurRadius: 10, spreadRadius: 2)
-                    ]
+                      if (isSelected)
+                        BoxShadow(
+                          color: color.withOpacity(0.5),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                    ],
                   ),
-                  child: isSelected ? const Icon(Icons.check, color: Colors.white) : null,
+                  child: isSelected
+                      ? const Icon(Icons.check, color: Colors.white)
+                      : null,
                 ),
               );
             }).toList(),
-          )
+          ),
         ],
       ),
     );
@@ -274,7 +351,9 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
             controller: _nameController,
             decoration: InputDecoration(
               labelText: 'Restaurant Name',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(5)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
             ),
           ),
           const SizedBox(height: 20),
@@ -283,7 +362,9 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
             maxLines: 3,
             decoration: InputDecoration(
               labelText: 'Description',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(5)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
             ),
           ),
         ],

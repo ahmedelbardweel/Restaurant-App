@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/supabase_service.dart';
-import '../main.dart'; // To navigate to the main list
-
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../data/repositories/supabase_repository.dart';
+import 'admin/admin_dashboard_screen.dart';
+import 'customer/widgets/restaurant_list_view.dart';
+import 'restaurant/restaurant_dashboard_screen.dart';
 class SplashLoaderScreen extends StatefulWidget {
   const SplashLoaderScreen({super.key});
 
@@ -10,7 +12,8 @@ class SplashLoaderScreen extends StatefulWidget {
   State<SplashLoaderScreen> createState() => _SplashLoaderScreenState();
 }
 
-class _SplashLoaderScreenState extends State<SplashLoaderScreen> with SingleTickerProviderStateMixin {
+class _SplashLoaderScreenState extends State<SplashLoaderScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
@@ -23,13 +26,15 @@ class _SplashLoaderScreenState extends State<SplashLoaderScreen> with SingleTick
       duration: const Duration(milliseconds: 1500),
     );
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
-    );
+    _fadeAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _controller.forward();
 
@@ -38,12 +43,32 @@ class _SplashLoaderScreenState extends State<SplashLoaderScreen> with SingleTick
 
   Future<void> _loadData() async {
     // Artificial minimum delay for the animation to look good
-    await Future.wait([
-      Future.delayed(const Duration(seconds: 2)),
-      // In the future, we could preload Supabase data here:
-      // SupabaseService().getRestaurants(),
-    ]);
-    
+    await Future.delayed(const Duration(seconds: 2));
+
+    if (!mounted) return;
+
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null) {
+      try {
+        final role = await SupabaseRepository().getUserRole(session.user.id);
+        if (mounted) {
+          if (role == 'admin') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const AdminDashboardScreen()),
+            );
+            return;
+          } else if (role == 'restaurant') {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const RestaurantDashboardScreen()),
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        print('Error getting role in splash: $e');
+      }
+    }
+
     if (mounted) {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const RestaurantListScreen()),

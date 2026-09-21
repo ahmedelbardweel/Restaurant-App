@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class SupabaseService {
@@ -53,6 +52,35 @@ class SupabaseService {
     );
   }
 
+  /// Sign up a new Customer
+  Future<AuthResponse> signUpCustomer(String email, String password) async {
+    final response = await client.auth.signUp(
+      email: email,
+      password: password,
+    );
+    
+    // Explicitly create a customer profile
+    if (response.user != null) {
+      // Check if profile exists first to be safe
+      final existing = await client.from('profiles').select('id').eq('id', response.user!.id).maybeSingle();
+      if (existing == null) {
+        await client.from('profiles').insert({'id': response.user!.id, 'role': 'customer'});
+      }
+    }
+    
+    return response;
+  }
+
+  /// Sign in with Google (OAuth)
+  Future<bool> signInWithGoogle() async {
+    return await client.auth.signInWithOAuth(OAuthProvider.google);
+  }
+
+  /// Sign out
+  Future<void> signOut() async {
+    await client.auth.signOut();
+  }
+
   /// Get User Role
   Future<String> getUserRole(String userId) async {
     try {
@@ -64,9 +92,9 @@ class SupabaseService {
       
       if (response == null) {
         // If no profile exists, create a default one based on email if needed, 
-        // but typically we default to 'restaurant'. For testing, if email has admin, make admin.
+        // but typically we default to 'customer'. For testing, if email has admin, make admin.
         final user = client.auth.currentUser;
-        final role = (user?.email?.contains('admin') == true) ? 'admin' : 'restaurant';
+        final role = (user?.email?.contains('admin') == true) ? 'admin' : 'customer';
         await client.from('profiles').insert({'id': userId, 'role': role});
         return role;
       }
@@ -120,7 +148,7 @@ class SupabaseService {
       }
     } catch (e) {
       print('Error completing onboarding: $e');
-      throw e;
+      rethrow;
     }
   }
 

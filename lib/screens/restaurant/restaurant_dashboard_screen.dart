@@ -1,15 +1,16 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:image_picker/image_picker.dart';
-import '../services/supabase_service.dart';
-import '../main.dart';
-import '../main.dart';
+import '../../data/repositories/supabase_repository.dart';
+import '../customer/widgets/restaurant_list_view.dart';
+import 'dialogs/add_category_sheet.dart';
+import 'dialogs/add_item_sheet.dart';
+import 'dialogs/confirm_delete_sheet.dart';
+import 'widgets/restaurant_profile_tab.dart';
 
 class RestaurantDashboardScreen extends StatefulWidget {
   const RestaurantDashboardScreen({super.key});
@@ -67,7 +68,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
-    final profile = await SupabaseService().getRestaurantProfile(user.id);
+    final profile = await SupabaseRepository().getRestaurantProfile(user.id);
     if (profile != null) {
       _restaurantId = profile['id'];
       _restaurantName = profile['name'] ?? 'My Restaurant';
@@ -89,7 +90,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
 
   Future<void> _fetchCategories() async {
     if (_restaurantId == null) return;
-    final cats = await SupabaseService().getRawCategories(_restaurantId!);
+    final cats = await SupabaseRepository().getRawCategories(_restaurantId!);
     if (mounted) {
       setState(() {
         _categories = cats;
@@ -97,338 +98,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
     }
   }
 
-  // Helper: Open simple bottom sheet for input
-  void _showAddCategorySheet() {
-    final controller = TextEditingController();
-    _showCustomBottomSheet(
-      title: 'Add New Category',
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildInput(controller, 'Category Name', Icons.category),
-          const SizedBox(height: 20),
-          _buildPrimaryButton('Create Category', () async {
-            if (controller.text.trim().isEmpty) return;
-            Navigator.pop(context);
-            setState(() => _isLoading = true);
-            await SupabaseService().addCategory(
-              _restaurantId!,
-              controller.text.trim(),
-            );
-            await _fetchCategories();
-            setState(() => _isLoading = false);
-          }),
-        ],
-      ),
-    );
-  }
 
-  void _showAddItemSheet(String categoryId) {
-    final nameController = TextEditingController();
-    final descController = TextEditingController();
-    final priceController = TextEditingController();
-    List<XFile> selectedImages = [];
-    bool isUploading = false;
-
-    _showCustomBottomSheet(
-      title: 'Add Menu Item',
-      child: StatefulBuilder(
-        builder: (BuildContext context, StateSetter setModalState) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildInput(nameController, 'Item Name', Icons.fastfood),
-              const SizedBox(height: 15),
-              _buildInput(descController, 'Description', Icons.description),
-              const SizedBox(height: 15),
-              _buildInput(
-                priceController,
-                'Price (e.g. 10.99)',
-                Icons.attach_money,
-                isNumber: true,
-              ),
-              const SizedBox(height: 15),
-
-              // Image Picker Section
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Images',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  TextButton.icon(
-                    icon: const Icon(
-                      Icons.add_photo_alternate,
-                      color: Colors.white,
-                    ),
-                    label: const Text(
-                      'Add Images',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                    onPressed: () async {
-                      final ImagePicker picker = ImagePicker();
-                      final List<XFile> images = await picker.pickMultiImage();
-                      if (images.isNotEmpty) {
-                        setModalState(() {
-                          selectedImages.addAll(images);
-                        });
-                      }
-                    },
-                  ),
-                ],
-              ),
-              if (selectedImages.isNotEmpty)
-                Container(
-                  height: 80,
-                  margin: const EdgeInsets.only(top: 10, bottom: 10),
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: selectedImages.length,
-                    itemBuilder: (context, index) {
-                      return Stack(
-                        children: [
-                          Container(
-                            margin: const EdgeInsets.only(right: 10),
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(8),
-                              image: DecorationImage(
-                                image: FileImage(
-                                  File(selectedImages[index].path),
-                                ),
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            top: 2,
-                            right: 12,
-                            child: GestureDetector(
-                              onTap: () {
-                                setModalState(() {
-                                  selectedImages.removeAt(index);
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                decoration: const BoxDecoration(
-                                  color: Colors.black54,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-
-              const SizedBox(height: 20),
-              isUploading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: Colors.white),
-                    )
-                  : _buildPrimaryButton('Add Item', () async {
-                      if (nameController.text.trim().isEmpty ||
-                          priceController.text.trim().isEmpty)
-                        return;
-                      final price = double.tryParse(
-                        priceController.text.trim(),
-                      );
-                      if (price == null) return;
-
-                      setModalState(() => isUploading = true);
-
-                      // Upload images if any
-                      List<String> imageUrls = [];
-                      if (selectedImages.isNotEmpty) {
-                        imageUrls = await SupabaseService()
-                            .uploadMenuItemImages(selectedImages);
-                      }
-
-                      await SupabaseService().addMenuItem(
-                        categoryId,
-                        nameController.text.trim(),
-                        descController.text.trim(),
-                        price,
-                        imageUrls,
-                      );
-
-                      if (mounted) {
-                        Navigator.pop(context);
-                        setState(() => _isLoading = true);
-                        await _fetchCategories();
-                        setState(() => _isLoading = false);
-                      }
-                    }),
-            ],
-          );
-        },
-      ),
-    );
-  }
-
-  void _showConfirmDeleteSheet(
-    String title,
-    String subtitle,
-    VoidCallback onConfirm,
-  ) {
-    _showCustomBottomSheet(
-      title: title,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            subtitle,
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              Expanded(
-                child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Cancel',
-                    style: TextStyle(color: Colors.white54, fontSize: 16),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _buildPrimaryButton('Delete', () {
-                  Navigator.pop(context);
-                  onConfirm();
-                }, color: Colors.redAccent),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showCustomBottomSheet({required String title, required Widget child}) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-              border: Border.all(color: Colors.white12, width: 1),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: Colors.white24,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                Text(
-                  title,
-                  style: GoogleFonts.originalSurfer(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                child,
-                const SizedBox(height: 10),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildInput(
-    TextEditingController controller,
-    String hint,
-    IconData icon, {
-    bool isNumber = false,
-  }) {
-    return TextField(
-      controller: controller,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-      keyboardType: isNumber
-          ? const TextInputType.numberWithOptions(decimal: true)
-          : TextInputType.text,
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: const TextStyle(color: Colors.white38),
-        prefixIcon: Icon(icon, color: Colors.white54),
-        filled: true,
-        fillColor: Colors.black54,
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
-          borderSide: const BorderSide(color: Colors.white12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrimaryButton(
-    String text,
-    VoidCallback onPressed, {
-    Color? color,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color ?? _brandColors[0],
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-        ),
-        onPressed: onPressed,
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
 
   Widget _buildMenuWidget() {
     return _categories.isEmpty 
@@ -442,7 +112,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(backgroundColor: _brandColors[0]),
-                    onPressed: _showAddCategorySheet,
+                    onPressed: () => showAddCategorySheet(context: context, restaurantId: _restaurantId!, brandColor: _brandColors[0], onAdded: _fetchCategories),
                     icon: const Icon(Icons.add, color: Colors.white),
                     label: const Text('Add Category', style: TextStyle(color: Colors.white)),
                   )
@@ -484,17 +154,18 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
                               children: [
                                 IconButton(
                                   icon: const Icon(Icons.add, color: Colors.white70),
-                                  onPressed: () => _showAddItemSheet(category['id']),
+                                  onPressed: () => showAddItemSheet(context: context, categoryId: category['id'], brandColor: _brandColors[0], onAdded: _fetchCategories),
                                 ),
                                 IconButton(
                                   icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
                                   onPressed: () {
-                                    _showConfirmDeleteSheet(
-                                      'Delete Category',
-                                      'Are you sure you want to delete "${category['name']}"? This will delete all items inside it.',
-                                      () async {
+                                    showConfirmDeleteSheet(
+                                      context: context,
+                                      title: 'Delete Category',
+                                      subtitle: 'Are you sure you want to delete "${category['name']}"? This will delete all items inside it.',
+                                      onConfirm: () async {
                                         setState(() => _isLoading = true);
-                                        await SupabaseService().deleteCategory(category['id']);
+                                        await SupabaseRepository().deleteCategory(category['id']);
                                         await _fetchCategories();
                                         setState(() => _isLoading = false);
                                       }
@@ -518,7 +189,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: items.length,
-                          separatorBuilder: (_, __) => const Divider(color: Colors.white10, height: 1),
+                          separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
                           itemBuilder: (context, i) {
                             final item = items[i];
                             List<String> images = [];
@@ -580,12 +251,13 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
                               trailing: IconButton(
                                 icon: const Icon(Icons.delete_outline, color: Colors.white38, size: 20),
                                 onPressed: () {
-                                  _showConfirmDeleteSheet(
-                                    'Delete Item',
-                                    'Are you sure you want to delete "${item['name']}"?',
-                                    () async {
+                                  showConfirmDeleteSheet(
+                                    context: context,
+                                    title: 'Delete Item',
+                                    subtitle: 'Are you sure you want to delete "${item['name']}"?',
+                                    onConfirm: () async {
                                       setState(() => _isLoading = true);
-                                      await SupabaseService().deleteMenuItem(item['id']);
+                                      await SupabaseRepository().deleteMenuItem(item['id']);
                                       await _fetchCategories();
                                       setState(() => _isLoading = false);
                                     }
@@ -692,7 +364,7 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
                       GestureDetector(
                         onTap: () {
                           _drawerController.reverse();
-                          _showAddCategorySheet();
+                          showAddCategorySheet(context: context, restaurantId: _restaurantId!, brandColor: _brandColors[0], onAdded: _fetchCategories);
                         },
                         child: const Padding(
                           padding: EdgeInsets.symmetric(vertical: 15.0),
@@ -759,6 +431,8 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen>
                       Widget pageContent;
                       if (index == 0) {
                         pageContent = menuWidget;
+                      } else if (_tabs[index] == 'Profile') {
+                        pageContent = RestaurantProfileTab(titleColor: titleColor);
                       } else {
                         pageContent = Center(
                           child: Text(
