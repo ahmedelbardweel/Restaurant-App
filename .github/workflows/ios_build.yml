@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       # ──────────────────────────────────────────
-      # 2. تثبيت Flutter
+      # 2. تثبيت Flutter (أحدث إصدار stable)
       # ──────────────────────────────────────────
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
@@ -37,34 +37,34 @@ jobs:
         run: flutter pub get
 
       # ──────────────────────────────────────────
-      # 4. تحليل الكود (اختياري)
+      # 4. تحليل الكود (اختياري - لا يوقف البناء)
       # ──────────────────────────────────────────
       - name: 🔍 Analyze Code
         run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
       # ──────────────────────────────────────────
-      # 5. تثبيت CocoaPods
+      # 5. إعداد CocoaPods cache لتسريع البناء
       # ──────────────────────────────────────────
-      - name: 🍫 Install CocoaPods
-        run: |
-          cd ios
-          pod install --repo-update
-        continue-on-error: false
+      - name: 🍫 Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
 
       # ──────────────────────────────────────────
-      # 6. بناء IPA بدون Code Signing
-      #    (no-codesign مناسب للتطوير والاختبار)
+      # 6. بناء iOS - flutter يتولى CocoaPods تلقائياً
       # ──────────────────────────────────────────
       - name: 🔨 Build iOS (No Code Sign)
         run: |
-          flutter build ios --release --no-codesign
+          flutter build ios --release --no-codesign --verbose
 
       # ──────────────────────────────────────────
       # 7. تحزيم IPA يدوياً
-      #    (بسبب عدم وجود شهادات توقيع)
       # ──────────────────────────────────────────
-      - name: 📦 Package IPA (Ad-Hoc without signing)
+      - name: 📦 Package IPA
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
@@ -102,7 +102,7 @@ jobs:
             - حمّل ملف `RestaurantApp.ipa` من المرفقات أدناه
             
             > ⚠️ هذا البناء بدون توقيع رسمي (No Code Signing).
-            > لتثبيته على جهاز حقيقي تحتاج شهادة Apple Developer أو استخدام AltStore/Sideloadly.
+            > لتثبيته على جهاز حقيقي استخدم AltStore أو Sideloadly.
           files: RestaurantApp.ipa
           draft: false
           prerelease: false
