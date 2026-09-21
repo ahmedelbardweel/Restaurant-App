@@ -1,0 +1,111 @@
+name: 🍎 Build iOS IPA
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch: # يسمح بتشغيل يدوي من GitHub
+
+jobs:
+  build-ios:
+    name: Build iOS IPA
+    runs-on: macos-latest  # يجب macOS لبناء iOS
+
+    steps:
+      # ──────────────────────────────────────────
+      # 1. سحب الكود
+      # ──────────────────────────────────────────
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      # ──────────────────────────────────────────
+      # 2. تثبيت Flutter
+      # ──────────────────────────────────────────
+      - name: 🐦 Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.0'   # غيّر للإصدار الذي تستخدمه
+          channel: 'stable'
+          cache: true
+
+      # ──────────────────────────────────────────
+      # 3. تثبيت الاعتمادات
+      # ──────────────────────────────────────────
+      - name: 📦 Install Dependencies
+        run: flutter pub get
+
+      # ──────────────────────────────────────────
+      # 4. تحليل الكود (اختياري)
+      # ──────────────────────────────────────────
+      - name: 🔍 Analyze Code
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      # ──────────────────────────────────────────
+      # 5. تثبيت CocoaPods
+      # ──────────────────────────────────────────
+      - name: 🍫 Install CocoaPods
+        run: |
+          cd ios
+          pod install --repo-update
+        continue-on-error: false
+
+      # ──────────────────────────────────────────
+      # 6. بناء IPA بدون Code Signing
+      #    (no-codesign مناسب للتطوير والاختبار)
+      # ──────────────────────────────────────────
+      - name: 🔨 Build iOS (No Code Sign)
+        run: |
+          flutter build ios --release --no-codesign
+
+      # ──────────────────────────────────────────
+      # 7. تحزيم IPA يدوياً
+      #    (بسبب عدم وجود شهادات توقيع)
+      # ──────────────────────────────────────────
+      - name: 📦 Package IPA (Ad-Hoc without signing)
+        run: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r RestaurantApp.ipa Payload
+          echo "✅ IPA created successfully!"
+          ls -lh RestaurantApp.ipa
+
+      # ──────────────────────────────────────────
+      # 8. رفع IPA كـ Artifact
+      # ──────────────────────────────────────────
+      - name: ⬆️ Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RestaurantApp-IPA
+          path: RestaurantApp.ipa
+          retention-days: 30
+
+      # ──────────────────────────────────────────
+      # 9. إنشاء Release (فقط عند push على main)
+      # ──────────────────────────────────────────
+      - name: 🚀 Create GitHub Release
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: "Release v${{ github.run_number }}"
+          body: |
+            ## 🍎 Restaurant App - iOS Build
+            
+            **Build Number:** ${{ github.run_number }}
+            **Commit:** ${{ github.sha }}
+            **Branch:** ${{ github.ref_name }}
+            
+            ### تحميل التطبيق:
+            - حمّل ملف `RestaurantApp.ipa` من المرفقات أدناه
+            
+            > ⚠️ هذا البناء بدون توقيع رسمي (No Code Signing).
+            > لتثبيته على جهاز حقيقي تحتاج شهادة Apple Developer أو استخدام AltStore/Sideloadly.
+          files: RestaurantApp.ipa
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
