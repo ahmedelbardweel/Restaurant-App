@@ -9,6 +9,9 @@ on:
       - main
   workflow_dispatch: # يسمح بتشغيل يدوي من GitHub
 
+permissions:
+  contents: write  # مطلوب لإنشاء GitHub Releases
+
 jobs:
   build-ios:
     name: Build iOS IPA
