@@ -79,7 +79,9 @@ class ProfileTabView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(50),
                             border: Border.all(color: Colors.grey.shade300),
                           ),
-                          child: ListTile(
+                          child: Material(
+                            color: Colors.transparent,
+                            child: ListTile(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(50),
                             ),
@@ -106,6 +108,7 @@ class ProfileTabView extends StatelessWidget {
                             onTap: () {
                               AppBottomSheets.showLanguageSheet(context);
                             },
+                          ),
                           ),
                         ),
                       ],

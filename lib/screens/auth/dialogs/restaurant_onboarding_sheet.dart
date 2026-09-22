@@ -92,6 +92,12 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
   }
 
   Future<void> _completeOnboarding() async {
+    if (_logoImage == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select and upload a logo for your restaurant.')),
+      );
+      return;
+    }
     if (_selectedColors.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please select exactly 4 colors.')),
@@ -111,6 +117,8 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       final userId = Supabase.instance.client.auth.currentUser!.id;
       final intColors = _selectedColors.map((c) => c.toARGB32()).toList();
 
+      final logoUrl = await SupabaseRepository().uploadRestaurantLogo(userId, _logoImage!);
+
       await SupabaseRepository().completeOnboarding(
         userId,
         intColors,
@@ -118,6 +126,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
         _nameEnController.text.trim(),
         _descArController.text.trim(),
         _descEnController.text.trim(),
+        logoUrl,
       );
 
       if (mounted) {

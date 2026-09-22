@@ -12,6 +12,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Restaurant App';
 
   @override
+  String get backButton => 'Back';
+
+  @override
   String get loginTitle => 'Welcome Back';
 
   @override

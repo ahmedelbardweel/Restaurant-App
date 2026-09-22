@@ -192,6 +192,22 @@ class _CurvedDashboardScaffoldState extends State<CurvedDashboardScaffold>
                                         ),
                                       ),
                                     ),
+                                    if (Navigator.canPop(context))
+                                      Align(
+                                        alignment: AlignmentDirectional.centerEnd,
+                                        child: TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                          },
+                                          child: Text(
+                                            AppLocalizations.of(context)!.backButton,
+                                            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                              color: appBarTextColor.withValues(alpha: 0.7),
+                                              letterSpacing: 1.0,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
                                   ],
                                 ),
                               ),

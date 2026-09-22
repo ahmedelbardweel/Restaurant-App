@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class SupabaseRepository {
   final SupabaseClient _client;
@@ -62,7 +63,7 @@ class SupabaseRepository {
 
   Future<List<Map<String, dynamic>>> getActiveRestaurants() async {
     try {
-      final response = await _client.from('restaurants').select('id, name, name_ar, name_en, colors').eq('is_onboarded', true);
+      final response = await _client.from('restaurants').select('*').eq('is_onboarded', true);
       
       return (response as List).map((res) {
         List<dynamic> rawColors = res['colors'] ?? [];
@@ -70,13 +71,11 @@ class SupabaseRepository {
         while (parsedColors.length < 4) {
           parsedColors.add(0xFF424242);
         }
-        return {
-          'id': res['id'],
-          'text': res['name'] ?? 'Unknown',
-          'name_ar': res['name_ar'],
-          'name_en': res['name_en'],
-          'colors': parsedColors.map((c) => Color(c)).toList(),
-        };
+        
+        final map = Map<String, dynamic>.from(res);
+        map['text'] = res['name'] ?? 'Unknown';
+        map['colors'] = parsedColors.map((c) => Color(c)).toList();
+        return map;
       }).toList();
     } catch (e) {
       throw Exception('Failed to fetch restaurants: $e');
@@ -92,7 +91,14 @@ class SupabaseRepository {
     }
   }
 
-  Future<void> completeOnboarding(String userId, List<int> colors, String nameAr, String nameEn, String descAr, String descEn) async {
+  Future<String> uploadRestaurantLogo(String userId, File file) async {
+    final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    final filePath = 'logos/$userId/$fileName';
+    await _client.storage.from('menu_images').upload(filePath, file);
+    return _client.storage.from('menu_images').getPublicUrl(filePath);
+  }
+
+  Future<void> completeOnboarding(String userId, List<int> colors, String nameAr, String nameEn, String descAr, String descEn, String logoUrl) async {
     final existingRest = await _client.from('restaurants').select('id').eq('owner_id', userId).maybeSingle();
     final data = {
       'colors': colors,
@@ -100,6 +106,7 @@ class SupabaseRepository {
       'name_en': nameEn,
       'description_ar': descAr,
       'description_en': descEn,
+      'logo_url': logoUrl,
       'is_onboarded': true,
     };
 

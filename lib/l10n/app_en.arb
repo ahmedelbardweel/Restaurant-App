@@ -1,5 +1,6 @@
 {
   "appTitle": "Restaurant App",
+  "backButton": "Back",
   "loginTitle": "Welcome Back",
   "loginSubtitle": "Login to your account",
   "email": "Email",

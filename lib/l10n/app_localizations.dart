@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Restaurant App'**
   String get appTitle;
 
+  /// No description provided for @backButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get backButton;
+
   /// No description provided for @loginTitle.
   ///
   /// In en, this message translates to:

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:splash_screen/core/widgets/custom_loader.dart';
@@ -19,28 +20,29 @@ class RestaurantListScreen extends StatefulWidget {
 }
 
 class _RestaurantListScreenState extends State<RestaurantListScreen> {
-  late final PageController _pageController;
+  final PageController _pageController = PageController();
+  Drag? _drag;
   List<Map<String, dynamic>> _words = [];
   bool _isLoading = true;
 
   bool _showExpansion = false;
-  final double _dotSize = 30.0;
-  final double _itemHeight = 80.0; // Vertical distance between items
+  final double _dotSize = 50.0;
   int _currentIndex = 0;
 
   @override
   void initState() {
     super.initState();
     _loadRestaurants();
-
-    _pageController = PageController(viewportFraction: 0.15);
-
     _pageController.addListener(() {
       if (_pageController.hasClients) {
         int newIndex = _pageController.page!.round();
-        if (newIndex != _currentIndex) {
-          _currentIndex = newIndex;
-          HapticFeedback.lightImpact();
+        if (newIndex != _currentIndex &&
+            newIndex >= 0 &&
+            newIndex < _words.length) {
+          setState(() {
+            _currentIndex = newIndex;
+          });
+          HapticFeedback.selectionClick();
         }
       }
     });
@@ -74,7 +76,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
 
     Future.delayed(const Duration(milliseconds: 800), () {
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
+      Navigator.of(context).push(
         PageRouteBuilder(
           pageBuilder: (context, animation, secondaryAnimation) =>
               CustomerHomeScreen(restaurantData: selectedRestaurant),
@@ -83,7 +85,14 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
           },
           transitionDuration: const Duration(milliseconds: 600),
         ),
-      );
+      ).then((_) {
+        // When coming back, reset the expansion animation so the list is visible
+        if (mounted) {
+          setState(() {
+            _showExpansion = false;
+          });
+        }
+      });
     });
   }
 
@@ -103,88 +112,171 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
           children: [
             if (_isLoading)
               const Center(child: CustomLoader())
-            else if (_words.isEmpty)
-              const Center(
-                child: Text(
-                  'No restaurants created yet.',
-                  style: TextStyle(color: Colors.grey, fontSize: 18),
-                ),
-              )
             else ...[
-              RepaintBoundary(
-                child: AnimatedBuilder(
-                  animation: _pageController,
-                  builder: (context, child) {
-                    double progress = 0.0;
-                    if (_pageController.hasClients) {
-                      progress = _pageController.page ?? 0.0;
-                    }
-
-                    final double translateY =
-                        (size.height / 2) - (progress * _itemHeight) - 28;
-
-                    final double ry = size.height * 0.65;
-                    const double rx = 150.0;
-                    const double baseLeft = 30.0;
-
-                    return Transform.translate(
-                      offset: Offset(0, translateY),
-                      child: Stack(
-                        children: [
-                          for (int i = 0; i < _words.length; i++)
-                            Builder(
-                              builder: (context) {
-                                double dy = (i - progress) * _itemHeight;
-
-                                double dx = 0;
-                                if (dy.abs() < ry) {
-                                  dx =
-                                      rx * math.sqrt(1 - (dy * dy) / (ry * ry));
-                                }
-
-                                double wordLeft = baseLeft + dx;
-
-                                double distanceRatio = (dy.abs() / _itemHeight)
-                                    .clamp(0.0, 1.0);
-                                double curveRatio = Curves.easeOut.transform(
-                                  1.0 - distanceRatio,
-                                );
-
-                                double currentFontSize =
-                                    20.0 + (12.0 * curveRatio);
-                                Color currentColor = Color.lerp(
-                                  Colors.white24,
-                                  Colors.white,
-                                  curveRatio,
-                                )!;
-
-                                final textDir = Directionality.of(context);
-                                // Invert direction: Arabic -> Left, English -> Right
-                                final invertedDir = textDir == TextDirection.rtl
-                                    ? TextDirection.ltr
-                                    : TextDirection.rtl;
-                                final isInvertedRtl =
-                                    invertedDir == TextDirection.rtl;
-
-                                return Positioned.directional(
-                                  textDirection: invertedDir,
-                                  top: 0,
-                                  start: 0,
-                                  child: Transform.translate(
-                                    offset: Offset(
-                                      isInvertedRtl ? -wordLeft : wordLeft,
-                                      i * _itemHeight,
+              Positioned.fill(
+                child: PageView.builder(
+                  controller: _pageController,
+                  itemCount: _words.length,
+                  itemBuilder: (context, index) {
+                    final restaurant = _words[index];
+                    final logoUrl = restaurant['logo_url'];
+                    
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 150.0), // Padding to avoid overlapping with bottom navigation
+                        child: AnimatedBuilder(
+                          animation: _pageController,
+                          builder: (context, child) {
+                            double value = 1.0;
+                            if (_pageController.position.haveDimensions) {
+                              value = _pageController.page! - index;
+                              value = (1 - (value.abs() * 0.3)).clamp(0.0, 1.0);
+                            }
+                            return Transform.scale(
+                              scale: value,
+                              child: Opacity(
+                                opacity: value.clamp(0.0, 1.0),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Hero(
+                            tag: 'restaurant_logo_${restaurant['id']}',
+                            child: logoUrl != null && logoUrl.toString().isNotEmpty
+                                ? Container(
+                                    width: 300,
+                                    height: 300,
+                                    decoration: BoxDecoration(
+                                      image: DecorationImage(
+                                        image: NetworkImage(logoUrl),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
-                                    child: GestureDetector(
-                                      onTap: _onRestaurantSelected,
-                                      child: Container(
-                                        color: Colors.transparent,
-                                        padding: const EdgeInsets.symmetric(
-                                          vertical: 10,
-                                          horizontal: 20,
+                                  )
+                                : Container(
+                                    width: 300,
+                                    height: 300,
+                                    child: const Icon(Icons.storefront, size: 200, color: Colors.white),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              if (!_showExpansion)
+                Positioned(
+                  bottom: 105,
+                  left: 0,
+                  right: 0,
+                  child: GestureDetector(
+                    onHorizontalDragStart: (DragStartDetails details) {
+                      if (_pageController.position.haveDimensions) {
+                        _drag = _pageController.position.drag(details, () {
+                          _drag = null;
+                        });
+                      }
+                    },
+                    onHorizontalDragUpdate: (DragUpdateDetails details) {
+                      _drag?.update(details);
+                    },
+                    onHorizontalDragEnd: (DragEndDetails details) {
+                      _drag?.end(details);
+                    },
+                    onHorizontalDragCancel: () {
+                      _drag?.cancel();
+                    },
+                    child: SizedBox(
+                      height: 150,
+                      width: size.width,
+                      child: RepaintBoundary(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.vertical(
+                            top: Radius.elliptical(size.width, 150),
+                          ),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(
+                              sigmaX: 10.0,
+                              sigmaY: 10.0,
+                            ),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.elliptical(size.width, 60),
+                                ),
+                              ),
+                              child: AnimatedBuilder(
+                                animation: _pageController,
+                                builder: (context, child) {
+                                  double progress = 0.0;
+                                  if (_pageController.hasClients) {
+                                    progress = _pageController.page ?? 0.0;
+                                  }
+
+                                  Color activeColor = Colors.white;
+                                  Color inactiveColor = Colors.white54;
+                                  final double itemWidth = size.width / 2.5;
+                                  final double centerX = size.width / 2;
+                                  final double rx = size.width * 0.8;
+                                  const double ry = 35.0;
+
+                                  return Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Positioned(
+                                        bottom: 10,
+                                        child: Container(
+                                          width: 25,
+                                          height: 25,
+                                          decoration: const BoxDecoration(
+                                            color: Colors.blueAccent,
+                                            shape: BoxShape.circle,
+                                          ),
                                         ),
-                                        child: Text(
-                                          context
+                                      ),
+                                      for (int i = 0; i < _words.length; i++)
+                                        () {
+                                          double dx =
+                                              (i - progress) * itemWidth;
+                                          double distance = dx.abs();
+                                          double dy = 0;
+                                          if (distance < rx) {
+                                            dy =
+                                                ry *
+                                                math.sqrt(
+                                                  1 -
+                                                      (distance * distance) /
+                                                          (rx * rx),
+                                                );
+                                          }
+                                          double distanceRatio =
+                                              (distance / itemWidth).clamp(
+                                                0.0,
+                                                1.0,
+                                              );
+                                          double curveRatio = Curves.easeOut
+                                              .transform(1.0 - distanceRatio);
+
+                                          double currentScale =
+                                              1.0 + (0.75 * curveRatio);
+                                          Color currentColor = Color.lerp(
+                                            inactiveColor,
+                                            activeColor,
+                                            curveRatio,
+                                          )!;
+
+                                          double wordLeft =
+                                              centerX + dx - (itemWidth / 2);
+                                          double wordBottom = 45.0 + dy;
+
+                                          bool isRTL =
+                                              Directionality.of(context) ==
+                                              TextDirection.rtl;
+
+                                          String text =
+                                              context
                                                       .read<LocaleCubit>()
                                                       .state
                                                       .languageCode ==
@@ -192,48 +284,80 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                                               ? (_words[i]['name_ar'] ??
                                                     _words[i]['text'])
                                               : (_words[i]['name_en'] ??
-                                                    _words[i]['text']),
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: currentFontSize,
-                                            color: currentColor,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
+                                                    _words[i]['text']);
+
+                                          return PositionedDirectional(
+                                            start: 0,
+                                            bottom: 0,
+                                            child: Transform.translate(
+                                              offset: Offset(
+                                                isRTL ? -wordLeft : wordLeft,
+                                                -wordBottom,
+                                              ),
+                                              child: SizedBox(
+                                                width: itemWidth,
+                                                child: GestureDetector(
+                                                  behavior: HitTestBehavior.opaque,
+                                                  onTap: () {
+                                                    if (i == _currentIndex) {
+                                                      _onRestaurantSelected();
+                                                    } else {
+                                                      _pageController
+                                                          .animateToPage(
+                                                            i,
+                                                            duration:
+                                                                const Duration(
+                                                                  milliseconds:
+                                                                      500,
+                                                                ),
+                                                            curve: Curves
+                                                                .easeOutExpo,
+                                                          );
+                                                    }
+                                                  },
+                                                  child: Container(
+                                                    color: Colors.transparent,
+                                                    alignment: Alignment.center,
+                                                    child: Transform.scale(
+                                                      scale: currentScale,
+                                                      child: Text(
+                                                        text,
+                                                        style: Theme.of(context)
+                                                            .textTheme
+                                                            .displaySmall
+                                                            ?.copyWith(
+                                                              fontSize: 16.0,
+                                                              color:
+                                                                  currentColor,
+                                                            ),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        maxLines: 1,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }(),
+                                    ],
+                                  );
+                                },
+                              ),
                             ),
-                        ],
+                          ),
+                        ),
                       ),
-                    );
-                  },
-                ),
-              ),
-              if (!_showExpansion)
-                Positioned.directional(
-                  textDirection: Directionality.of(context) == TextDirection.rtl
-                      ? TextDirection.ltr
-                      : TextDirection.rtl,
-                  start: 30,
-                  top: (size.height / 2) - (_dotSize / 2),
-                  child: Container(
-                    width: _dotSize,
-                    height: _dotSize,
-                    decoration: const BoxDecoration(
-                      color: Colors.blueAccent,
-                      shape: BoxShape.circle,
                     ),
                   ),
                 ),
               if (_showExpansion)
-                Positioned.directional(
-                  textDirection: Directionality.of(context) == TextDirection.rtl
-                      ? TextDirection.ltr
-                      : TextDirection.rtl,
-                  start: 30,
-                  top: (size.height / 2) - (_dotSize / 2),
+                Positioned(
+                  left: (size.width / 2) - (_dotSize / 2),
+                  bottom: 165,
                   child: TweenAnimationBuilder(
                     tween: Tween<double>(begin: 1.0, end: 120.0),
                     duration: const Duration(milliseconds: 700),
@@ -252,19 +376,6 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                       );
                     },
                   ),
-                ),
-              if (!_showExpansion)
-                PageView.builder(
-                  controller: _pageController,
-                  scrollDirection: Axis.vertical,
-                  itemCount: _words.length,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      behavior: HitTestBehavior.translucent,
-                      onTap: _onRestaurantSelected,
-                      child: const SizedBox.expand(),
-                    );
-                  },
                 ),
             ],
             if (!_showExpansion)
@@ -350,7 +461,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
+                          horizontal: 10,
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
@@ -370,7 +481,6 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                               ?.copyWith(
                                 color: Colors.white.withValues(alpha: 0.9),
                                 fontSize: 15,
-                                decoration: TextDecoration.underline,
                                 decorationColor: Colors.white.withValues(
                                   alpha: 0.9,
                                 ),

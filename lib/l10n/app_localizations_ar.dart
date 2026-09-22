@@ -12,6 +12,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appTitle => 'تطبيق المطعم';
 
   @override
+  String get backButton => 'رجوع';
+
+  @override
   String get loginTitle => 'مرحباً بعودتك !';
 
   @override
