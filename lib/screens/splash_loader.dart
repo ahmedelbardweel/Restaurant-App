@@ -5,6 +5,7 @@ import '../data/repositories/supabase_repository.dart';
 import 'admin/admin_dashboard_screen.dart';
 import 'customer/widgets/restaurant_list_view.dart';
 import 'restaurant/restaurant_dashboard_screen.dart';
+
 class SplashLoaderScreen extends StatefulWidget {
   const SplashLoaderScreen({super.key});
 
@@ -59,7 +60,9 @@ class _SplashLoaderScreenState extends State<SplashLoaderScreen>
             return;
           } else if (role == 'restaurant') {
             Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => const RestaurantDashboardScreen()),
+              MaterialPageRoute(
+                builder: (_) => const RestaurantDashboardScreen(),
+              ),
             );
             return;
           }

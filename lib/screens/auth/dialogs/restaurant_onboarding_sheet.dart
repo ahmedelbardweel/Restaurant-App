@@ -23,8 +23,10 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
   File? _logoImage;
   List<Color> _extractedColors = [];
   final List<Color> _selectedColors = [];
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descController = TextEditingController();
+  final TextEditingController _nameArController = TextEditingController();
+  final TextEditingController _nameEnController = TextEditingController();
+  final TextEditingController _descArController = TextEditingController();
+  final TextEditingController _descEnController = TextEditingController();
 
   // Loading state
   bool _isLoading = false;
@@ -96,9 +98,9 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       );
       return;
     }
-    if (_nameController.text.isEmpty) {
+    if (_nameArController.text.isEmpty || _nameEnController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter restaurant name.')),
+        const SnackBar(content: Text('Please enter restaurant name in both languages.')),
       );
       return;
     }
@@ -112,8 +114,10 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       await SupabaseRepository().completeOnboarding(
         userId,
         intColors,
-        _nameController.text,
-        _descController.text,
+        _nameArController.text.trim(),
+        _nameEnController.text.trim(),
+        _descArController.text.trim(),
+        _descEnController.text.trim(),
       );
 
       if (mounted) {
@@ -164,7 +168,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       height: MediaQuery.of(context).size.height,
       decoration: const BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(5)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
       ),
       child: SafeArea(
         child: Column(
@@ -192,10 +196,6 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                       fontWeight: FontWeight.bold,
                       color: Colors.black87,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.black54),
-                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
@@ -347,13 +347,26 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CustomTextField(
-            controller: _nameController,
-            hintText: 'Restaurant Name',
-            ),
+            controller: _nameArController,
+            hintText: 'Restaurant Name (Arabic)',
+            textAlign: TextAlign.right,
+          ),
+          const SizedBox(height: 10),
+          CustomTextField(
+            controller: _nameEnController,
+            hintText: 'Restaurant Name (English)',
+          ),
           const SizedBox(height: 20),
           CustomTextField(
-            controller: _descController,
-            hintText: 'Description',
+            controller: _descArController,
+            hintText: 'Description (Arabic)',
+            textAlign: TextAlign.right,
+            maxLines: 3,
+          ),
+          const SizedBox(height: 10),
+          CustomTextField(
+            controller: _descEnController,
+            hintText: 'Description (English)',
             maxLines: 3,
           ),
         ],

@@ -1,0 +1,124 @@
+{
+  "appTitle": "Restaurant App",
+  "loginTitle": "Welcome Back",
+  "loginSubtitle": "Login to your account",
+  "email": "Email",
+  "password": "Password",
+  "loginButton": "Login",
+  "dontHaveAccount": "Don't have an account?",
+  "registerHere": "Register Here",
+  "registerTitle": "Create Account",
+  "registerSubtitle": "Sign up to get started",
+  "name": "Full Name",
+  "registerButton": "Register",
+  "alreadyHaveAccount": "Already have an account?",
+  "loginHere": "Login Here",
+  "menu": "Menu",
+  "add": "Add",
+  "orders": "Orders",
+  "profile": "Profile",
+  "home": "Home",
+  "cart": "Cart",
+  "addCategory": "Add Category",
+  "emptyMenu": "Your menu is empty.",
+  "noItemsInCategory": "No items in this category.",
+  "addImages": "Add Images",
+  "images": "Images",
+  "language": "Language",
+  "arabic": "Arabic",
+  "english": "English",
+  "logout": "Logout",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "createCategory": "Create Category",
+  "itemNameAr": "Item Name (Arabic)",
+  "itemNameEn": "Item Name (English)",
+  "categoryNameAr": "Category Name (Arabic)",
+  "categoryNameEn": "Category Name (English)",
+  "descAr": "Description (Arabic)",
+  "descEn": "Description (English)",
+  "price": "Price (e.g. 10.99)",
+  "addMenuItem": "Add Menu Item",
+  "itemAddedSuccessfully": "Item added successfully!",
+  "categoryAddedSuccessfully": "Category added successfully!",
+  "deleteCategory": "Delete Category",
+  "deleteCategoryConfirm": "Are you sure you want to delete this category? This will delete all its items too.",
+  "deleteItem": "Delete Item",
+  "deleteItemConfirm": "Are you sure you want to delete this item?",
+  "close": "Close",
+  "customerAppTitle": "Find Your Favorite Food",
+  "categories": "Categories",
+  "popularRestaurants": "Popular Restaurants",
+  "settings": "Settings",
+  "restaurants": "Restaurants",
+  "noRestaurants": "No restaurants found.",
+  "restaurantProfile": "Restaurant Profile",
+  "restaurantName": "Restaurant Name",
+  "restaurantAddress": "Restaurant Address",
+  "restNameAr": "Restaurant Name (Arabic)",
+  "restNameEn": "Restaurant Name (English)",
+  "restDescAr": "Description (Arabic)",
+  "restDescEn": "Description (English)",
+  "phone": "Phone Number",
+  "addressAr": "Address (Arabic)",
+  "addressEn": "Address (English)",
+  "primaryColor": "Primary",
+  "secondaryColor": "Secondary",
+  "saving": "Saving...",
+  "saveChanges": "Save Changes",
+  "selectColor": "Select {label} Color",
+  "@selectColor": {
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
+  },
+  "profileUpdatedSuccessfully": "Profile updated successfully!",
+  "errorUpdatingProfile": "Error updating profile: {error}",
+  "@errorUpdatingProfile": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "couldNotGetLocation": "Could not get location: {error}",
+  "@couldNotGetLocation": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "notLoggedIn": "Not Logged In",
+  "signInToManageProfile": "Sign in to manage your profile and orders.",
+  "signIn": "Sign In",
+  "changeLanguageDesc": "Change the application language between Arabic and English",
+  "or": "OR",
+  "continueWithGoogle": "Continue with Google",
+  "dontHaveAccountSignUp": "Don't have an account? Sign Up",
+  "alreadyHaveAccountSignIn": "Already have an account? Sign In",
+  "errorOccurred": "Error: {error}",
+  "@errorOccurred": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "googleSignInFailed": "Google Sign-In failed: {error}",
+  "@googleSignInFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "search": "Search",
+  "noMenuAvailable": "No menu available.",
+  "chooseRestaurant": "Choose your restaurant",
+  "restaurantOwnerLogin": "Restaurant Owner? Login Here"
+}

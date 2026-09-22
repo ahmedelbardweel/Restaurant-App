@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/restaurant_ui_helpers.dart';
+import '../../../core/widgets/sheets/app_bottom_sheets.dart';
 
 void showConfirmDeleteSheet({
   required BuildContext context,
@@ -7,7 +8,7 @@ void showConfirmDeleteSheet({
   required String subtitle,
   required VoidCallback onConfirm,
 }) {
-  showCustomBottomSheet(
+  AppBottomSheets.showCustomBottomSheet(
     context: context,
     title: title,
     child: Column(

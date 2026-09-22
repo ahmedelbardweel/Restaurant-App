@@ -1,25 +1,29 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:splash_screen/l10n/app_localizations.dart';
 import '../../../data/repositories/supabase_repository.dart';
 import '../widgets/restaurant_ui_helpers.dart';
-
+import '../../../core/widgets/sheets/app_bottom_sheets.dart';
 import 'package:splash_screen/core/widgets/custom_loader.dart';
+
 void showAddItemSheet({
   required BuildContext context,
   required String categoryId,
   required Color brandColor,
   required VoidCallback onAdded,
 }) {
-  final nameController = TextEditingController();
-  final descController = TextEditingController();
+  final nameArController = TextEditingController();
+  final nameEnController = TextEditingController();
+  final descArController = TextEditingController();
+  final descEnController = TextEditingController();
   final priceController = TextEditingController();
   List<XFile> selectedImages = [];
   bool isUploading = false;
 
-  showCustomBottomSheet(
+  AppBottomSheets.showCustomBottomSheet(
     context: context,
-    title: 'Add Menu Item',
+    title: AppLocalizations.of(context)!.addMenuItem,
     child: StatefulBuilder(
       builder: (BuildContext context, StateSetter setModalState) {
         return Column(
@@ -27,57 +31,77 @@ void showAddItemSheet({
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             buildInput(
-              controller: nameController,
-              hint: 'Item Name',
+              controller: nameArController,
+              hint: AppLocalizations.of(context)!.itemNameAr,
+              icon: Icons.fastfood,
+            ),
+            const SizedBox(height: 10),
+            buildInput(
+              controller: nameEnController,
+              hint: AppLocalizations.of(context)!.itemNameEn,
               icon: Icons.fastfood,
             ),
             const SizedBox(height: 15),
             buildInput(
-              controller: descController,
-              hint: 'Description',
+              controller: descArController,
+              hint: AppLocalizations.of(context)!.descAr,
+              icon: Icons.description,
+            ),
+            const SizedBox(height: 10),
+            buildInput(
+              controller: descEnController,
+              hint: AppLocalizations.of(context)!.descEn,
               icon: Icons.description,
             ),
             const SizedBox(height: 15),
             buildInput(
               controller: priceController,
-              hint: 'Price (e.g. 10.99)',
+              hint: AppLocalizations.of(context)!.price,
               icon: Icons.attach_money,
               isNumber: true,
             ),
             const SizedBox(height: 15),
 
-            // Image Picker Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Images',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+            InkWell(
+              onTap: () async {
+                final ImagePicker picker = ImagePicker();
+                final List<XFile> images = await picker.pickMultiImage();
+                if (images.isNotEmpty) {
+                  setModalState(() {
+                    selectedImages.addAll(images);
+                  });
+                }
+              },
+              borderRadius: BorderRadius.circular(5),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 14,
                 ),
-                TextButton.icon(
-                  icon: const Icon(
-                    Icons.add_photo_alternate,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    'Add Images',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onPressed: () async {
-                    final ImagePicker picker = ImagePicker();
-                    final List<XFile> images = await picker.pickMultiImage();
-                    if (images.isNotEmpty) {
-                      setModalState(() {
-                        selectedImages.addAll(images);
-                      });
-                    }
-                  },
+                decoration: BoxDecoration(
+                  color: Colors.black54,
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: Colors.white12),
                 ),
-              ],
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: Colors.white54,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      AppLocalizations.of(context)!.addImages,
+                      style: const TextStyle(
+                        color: Colors.white38,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             if (selectedImages.isNotEmpty)
               Container(
@@ -134,14 +158,13 @@ void showAddItemSheet({
 
             const SizedBox(height: 20),
             isUploading
-                ? Center(
-                    child: CustomLoader(),
-                  )
+                ? Center(child: CustomLoader())
                 : buildPrimaryButton(
-                    text: 'Add Item',
+                    text: AppLocalizations.of(context)!.addMenuItem,
                     color: brandColor,
                     onPressed: () async {
-                      if (nameController.text.trim().isEmpty ||
+                      if (nameArController.text.trim().isEmpty ||
+                          nameEnController.text.trim().isEmpty ||
                           priceController.text.trim().isEmpty) {
                         return;
                       }
@@ -162,24 +185,35 @@ void showAddItemSheet({
 
                         await SupabaseRepository().addMenuItem(
                           categoryId,
-                          nameController.text.trim(),
-                          descController.text.trim(),
+                          nameArController.text.trim(),
+                          nameEnController.text.trim(),
+                          descArController.text.trim(),
+                          descEnController.text.trim(),
                           price,
                           imageUrls,
                         );
 
                         if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                AppLocalizations.of(
+                                  context,
+                                )!.itemAddedSuccessfully,
+                              ),
+                            ),
+                          );
                           Navigator.pop(context);
                           onAdded();
                         }
                       } catch (e) {
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Error: $e')),
-                          );
+                          ScaffoldMessenger.of(
+                            context,
+                          ).showSnackBar(SnackBar(content: Text('Error: $e')));
                         }
-                        setModalState(() => isUploading = false);
                       }
+                      setModalState(() => isUploading = false);
                     },
                   ),
           ],

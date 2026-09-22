@@ -1,31 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:splash_screen/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../data/repositories/supabase_repository.dart';
+import '../../core/utils/localization_helper.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/widgets/curved_dashboard_scaffold.dart';
+import '../../data/repositories/supabase_repository.dart';
 import '../customer/widgets/restaurant_list_view.dart';
 import 'dialogs/add_category_sheet.dart';
 import 'dialogs/add_item_sheet.dart';
 import 'dialogs/confirm_delete_sheet.dart';
 import 'widgets/restaurant_profile_tab.dart';
+import 'widgets/add_category_tab.dart';
 
 import 'package:splash_screen/core/widgets/custom_loader.dart';
+
 class RestaurantDashboardScreen extends StatefulWidget {
   const RestaurantDashboardScreen({super.key});
 
   @override
-  State<RestaurantDashboardScreen> createState() => _RestaurantDashboardScreenState();
+  State<RestaurantDashboardScreen> createState() =>
+      _RestaurantDashboardScreenState();
 }
 
 class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
   bool _isLoading = true;
   String? _restaurantId;
-  String _restaurantName = '';
+  Map<String, dynamic>? _profileData;
   String? _logoUrl;
   List<Color> _brandColors = [Colors.black, Colors.grey];
 
   List<Map<String, dynamic>> _categories = [];
-  final List<String> _tabs = ['Menu', 'Orders', 'Profile'];
 
   @override
   void initState() {
@@ -40,8 +45,8 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
 
     final profile = await SupabaseRepository().getRestaurantProfile(user.id);
     if (profile != null) {
+      _profileData = profile;
       _restaurantId = profile['id'];
-      _restaurantName = profile['name'] ?? 'My Restaurant';
       _logoUrl = profile['logo_url'];
 
       List<dynamic> rawColors = profile['colors'] ?? [];
@@ -69,134 +74,251 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
   }
 
   Widget _buildMenuWidget() {
-    return _categories.isEmpty 
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.restaurant_menu, size: 80, color: Colors.white24),
-                  const SizedBox(height: 20),
-                  const Text('Your menu is empty.', style: TextStyle(color: Colors.white54, fontSize: 18)),
-                  const SizedBox(height: 20),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: _brandColors[0]),
-                    onPressed: () => showAddCategorySheet(context: context, restaurantId: _restaurantId!, brandColor: _brandColors[0], onAdded: _fetchCategories),
-                    icon: const Icon(Icons.add, color: Colors.white),
-                    label: const Text('Add Category', style: TextStyle(color: Colors.white)),
-                  )
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.only(left: 16, right: 16, top: 160, bottom: 160), 
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final List items = category['menu_items'] ?? [];
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF141414),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.white10),
+    return _categories.isEmpty
+        ? Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.restaurant_menu,
+                  size: 80,
+                  color: Colors.white24,
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Your menu is empty.',
+                  style: TextStyle(color: Colors.white54, fontSize: 18),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _brandColors[0],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Category Header
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: const BoxDecoration(
-                          color: Colors.black26,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                  onPressed: () => showAddCategorySheet(
+                    context: context,
+                    restaurantId: _restaurantId!,
+                    brandColor: _brandColors[0],
+                    onAdded: _fetchCategories,
+                  ),
+                  icon: const Icon(Icons.add, color: Colors.white),
+                  label: Text(
+                    AppLocalizations.of(context)!.addCategory,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : ListView.builder(
+            padding: const EdgeInsets.only(
+              top: 120,
+              bottom: 120,
+              right: 10,
+              left: 10,
+            ),
+            itemCount: _categories.length,
+            itemBuilder: (context, index) {
+              final category = _categories[index];
+              final List items = category['menu_items'] ?? [];
+
+              return Container(
+                margin: const EdgeInsets.only(top: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF141414),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.white10),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 10,
+                      ),
+                      decoration: const BoxDecoration(
+                        color: Colors.black26,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(10),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              category['name'],
-                              style: TextStyle(color: _brandColors[0], fontSize: 20, fontWeight: FontWeight.bold),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            context.getLocalized(category, 'name'),
+                            style: TextStyle(
+                              color: _brandColors[0],
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                            Row(
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.add, color: Colors.white70),
-                                  onPressed: () => showAddItemSheet(context: context, categoryId: category['id'], brandColor: _brandColors[0], onAdded: _fetchCategories),
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.white10,
+                                  padding: const EdgeInsets.all(8),
                                 ),
+                                icon: const Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                onPressed: () => showAddItemSheet(
+                                  context: context,
+                                  categoryId: category['id'],
+                                  brandColor: _brandColors[0],
+                                  onAdded: _fetchCategories,
+                                ),
+                                tooltip: AppLocalizations.of(context)!.add,
+                              ),
+                              IconButton(
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.white10,
+                                  padding: const EdgeInsets.all(8),
+                                ),
+                                icon: const Icon(
+                                  Icons.delete_outline,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  showConfirmDeleteSheet(
+                                    context: context,
+                                    title: AppLocalizations.of(
+                                      context,
+                                    )!.deleteCategory,
+                                    subtitle: AppLocalizations.of(
+                                      context,
+                                    )!.deleteCategoryConfirm,
+                                    onConfirm: () async {
+                                      await SupabaseRepository().deleteCategory(
+                                        category['id'],
+                                      );
+                                      _fetchCategories();
+                                    },
+                                  );
+                                },
+                                tooltip: AppLocalizations.of(context)!.delete,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (items.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: Text(
+                          AppLocalizations.of(context)!.noItemsInCategory,
+                          style: const TextStyle(color: Colors.white38),
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        padding: EdgeInsets.zero,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: items.length,
+                        separatorBuilder: (_, _) =>
+                            const Divider(color: Colors.white10, height: 1),
+                        itemBuilder: (context, idx) {
+                          final item = items[idx];
+                          return ListTile(
+                            dense: true,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 0,
+                            ),
+                            title: Text(
+                              context.getLocalized(item, 'name'),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              context.getLocalized(item, 'description'),
+                              style: const TextStyle(
+                                color: Colors.white54,
+                                fontSize: 11,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '\$${item['price']}',
+                                  style: TextStyle(
+                                    color: _brandColors[0],
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
                                 IconButton(
-                                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: Colors.white10,
+                                    padding: const EdgeInsets.all(6),
+                                  ),
+                                  icon: const Icon(
+                                    Icons.delete_outline,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
                                   onPressed: () {
                                     showConfirmDeleteSheet(
                                       context: context,
-                                      title: 'Delete Category',
-                                      subtitle: 'Are you sure you want to delete "${category['name']}"? This will delete all items inside it.',
+                                      title: AppLocalizations.of(
+                                        context,
+                                      )!.deleteItem,
+                                      subtitle: AppLocalizations.of(
+                                        context,
+                                      )!.deleteItemConfirm,
                                       onConfirm: () async {
-                                        setState(() => _isLoading = true);
-                                        await SupabaseRepository().deleteCategory(category['id']);
-                                        await _fetchCategories();
-                                        setState(() => _isLoading = false);
-                                      }
+                                        await SupabaseRepository()
+                                            .deleteMenuItem(item['id']);
+                                        _fetchCategories();
+                                      },
                                     );
                                   },
-                                )
+                                ),
                               ],
-                            )
-                          ],
-                        ),
+                            ),
+                          );
+                        },
                       ),
-                      // Category Items
-                      if (items.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text('No items yet. Add one!', style: TextStyle(color: Colors.white38)),
-                        )
-                      else
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: items.length,
-                          separatorBuilder: (_, _) => const Divider(color: Colors.white10, height: 1),
-                          itemBuilder: (context, idx) {
-                            final item = items[idx];
-                            return ListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-                              title: Text(item['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500)),
-                              subtitle: Text(item['description'] ?? '', style: const TextStyle(color: Colors.white54, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Text('\$${item['price']}', style: TextStyle(color: _brandColors[0], fontWeight: FontWeight.bold, fontSize: 16)),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete_outline, color: Colors.white38, size: 20),
-                                    onPressed: () {
-                                      showConfirmDeleteSheet(
-                                        context: context,
-                                        title: 'Delete Item',
-                                        subtitle: 'Are you sure you want to delete "${item['name']}"?',
-                                        onConfirm: () async {
-                                          setState(() => _isLoading = true);
-                                          await SupabaseRepository().deleteMenuItem(item['id']);
-                                          await _fetchCategories();
-                                          setState(() => _isLoading = false);
-                                        }
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            );
-                          },
-                        )
-                    ],
-                  ),
-                );
-              },
-            );
+                  ],
+                ),
+              );
+            },
+          );
+  }
+
+  void _logout() async {
+    await Supabase.instance.client.auth.signOut();
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const RestaurantListScreen()),
+        (route) => false,
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final List<String> localizedTabs = [
+      l10n.menu,
+      l10n.add,
+      l10n.orders,
+      l10n.profile,
+    ];
+
     if (_isLoading) {
       return const Scaffold(
         backgroundColor: Colors.black,
@@ -208,132 +330,160 @@ class _RestaurantDashboardScreenState extends State<RestaurantDashboardScreen> {
     final Color primaryColor = _brandColors[0];
 
     return CurvedDashboardScaffold(
-      tabs: _tabs,
+      tabs: localizedTabs,
       brandColors: _brandColors,
       tabBackgroundColorsOverrides: const {
-        2: Color(0xFFF5F5F5), // Static background for Profile
+        3: Color(0xFFF5F5F5), // Static background for Profile
       },
-      appBarTitle: 'Menu',
+      appBarTitle: _profileData != null ? context.getLocalized(_profileData!, 'name') : l10n.menu,
       drawerBackgroundColor: Colors.white,
       drawerContent: SafeArea(
         child: Container(
-          width: 240, 
-          padding: const EdgeInsets.only(left: 20.0, top: 40.0, right: 10.0),
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      if (_logoUrl != null && _logoUrl!.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(10),
-                          child: Image.network(
-                            _logoUrl!,
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                      else
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: primaryColor.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(Icons.restaurant, color: primaryColor, size: 30),
-                        ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Text(
-                          _restaurantName,
-                          style: GoogleFonts.originalSurfer(color: primaryColor, fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  
-                  const Divider(color: Colors.black12, thickness: 1),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Menu Categories',
-                    style: GoogleFonts.originalSurfer(color: Colors.black54, fontSize: 14, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  if (_isLoading)
-                    const Center(child: CustomLoader())
-                  else if (_categories.isEmpty)
-                    const Text("No categories available.", style: TextStyle(color: Colors.black54, fontSize: 16))
-                  else
-                    ..._categories.map((cat) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Text(
-                        cat['name'],
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
-                      ),
-                    )),
-                  const SizedBox(height: 20),
-                  const Divider(color: Colors.black12, thickness: 1),
-                  
-                  GestureDetector(
-                    onTap: () {
-                      showAddCategorySheet(context: context, restaurantId: _restaurantId!, brandColor: _brandColors[0], onAdded: _fetchCategories);
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15.0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.add_circle_outline, color: Colors.black87, size: 28),
-                          SizedBox(width: 20),
-                          Text('Add Category', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
-                        ],
-                      ),
+          width: 240,
+          padding: const EdgeInsets.all(16),
+          child: _isLoading
+              ? const Center(child: CustomLoader())
+              : Column(
+                  children: [
+                    Expanded(
+                      child: _categories.isEmpty
+                          ? Center(
+                              child: Text(
+                                l10n.noItemsInCategory,
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              physics: const BouncingScrollPhysics(),
+                              itemCount: _categories.length,
+                              itemBuilder: (context, index) {
+                                final cat = _categories[index];
+                                final List items = cat['menu_items'] ?? [];
+
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 25.0),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        context.getLocalized(cat, 'name'),
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: primaryColor,
+                                          letterSpacing: 1.0,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 12),
+                                      ...items.map((item) {
+                                        return Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 15.0,
+                                          ),
+                                          child: Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  context.getLocalized(
+                                                    item,
+                                                    'name',
+                                                  ),
+                                                  style: const TextStyle(
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.black87,
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Text(
+                                                '\$${item['price']}',
+                                                style: const TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                     ),
-                  ),
-                  
-                  GestureDetector(
-                    onTap: () async {
-                      await Supabase.instance.client.auth.signOut();
-                      if (context.mounted) {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => const RestaurantListScreen()),
-                          (route) => false,
-                        );
-                      }
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 15.0),
-                      child: Row(
-                        children: [
-                          Icon(Icons.logout, color: Colors.black87, size: 28),
-                          SizedBox(width: 20),
-                          Text('Logout', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Colors.black87)),
-                        ],
+                    ListTile(
+                      leading: const Icon(Icons.logout, color: Colors.black87),
+                      title: Text(
+                        l10n.logout,
+                        style: const TextStyle(color: Colors.black87),
                       ),
+                      onTap: () {
+                        Navigator.pop(context);
+                        _logout();
+                      },
                     ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
         ),
       ),
       pageBuilder: (context, index, titleColor) {
+        if (_restaurantId == null) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Restaurant data not found.',
+                  style: TextStyle(color: titleColor, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(
+                  onPressed: _logout,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                  ),
+                  child: const Text('Logout', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          );
+        }
+
         if (index == 0) {
           return menuWidget;
-        } else if (_tabs[index] == 'Profile') {
+        } else if (index == 1) {
+          return AddCategoryTab(
+            restaurantId: _restaurantId!,
+            primaryColor: primaryColor,
+            titleColor: titleColor,
+            onAdded: _fetchCategories,
+          );
+        } else if (index == 3) {
           return RestaurantProfileTab(titleColor: titleColor);
         } else {
           return Center(
-            child: Text(
-              '${_tabs[index]} (Coming Soon)',
-              style: GoogleFonts.originalSurfer(fontSize: 24, fontWeight: FontWeight.bold, color: titleColor),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  localizedTabs[index],
+                  style: GoogleFonts.originalSurfer(
+                    fontSize: 42,
+                    fontWeight: FontWeight.bold,
+                    color: titleColor,
+                    letterSpacing: 3,
+                  ),
+                ),
+              ],
             ),
           );
         }

@@ -6,7 +6,8 @@ import '../../../core/widgets/custom_text_field.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../admin/admin_dashboard_screen.dart';
 import '../../restaurant/restaurant_dashboard_screen.dart';
-import 'restaurant_onboarding_sheet.dart';
+import 'package:splash_screen/l10n/app_localizations.dart';
+import '../../../core/widgets/sheets/app_bottom_sheets.dart';
 
 class CustomerAuthSheet extends StatefulWidget {
   final VoidCallback onAuthSuccess;
@@ -53,13 +54,7 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
             if (!isOnboarded) {
               if (mounted) {
                 Navigator.of(context).pop();
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  useSafeArea: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (_) => const OnboardingSheet(),
-                );
+                AppBottomSheets.showOnboardingSheet(context);
               }
             } else {
               if (mounted) {
@@ -84,9 +79,13 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.errorOccurred(e.toString()),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -105,9 +104,13 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Google Sign-In failed: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.googleSignInFailed(e.toString()),
+            ),
+          ),
+        );
       }
     }
   }
@@ -149,7 +152,9 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _isLogin ? 'Welcome Back!' : 'Create Account',
+                        _isLogin
+                            ? AppLocalizations.of(context)!.loginTitle
+                            : AppLocalizations.of(context)!.registerTitle,
                         style: const TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
@@ -159,8 +164,8 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                       const SizedBox(height: 8),
                       Text(
                         _isLogin
-                            ? 'Sign in to access your profile and orders.'
-                            : 'Sign up to start ordering delicious food.',
+                            ? AppLocalizations.of(context)!.loginSubtitle
+                            : AppLocalizations.of(context)!.registerSubtitle,
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.black54,
@@ -171,7 +176,7 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                       // Email Field
                       CustomTextField(
                         controller: _emailController,
-                        hintText: 'Email Address',
+                        hintText: AppLocalizations.of(context)!.email,
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 16),
@@ -179,14 +184,16 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                       // Password Field
                       CustomTextField(
                         controller: _passwordController,
-                        hintText: 'Password',
+                        hintText: AppLocalizations.of(context)!.password,
                         isPassword: true,
                       ),
                       const SizedBox(height: 24),
 
                       // Action Button
                       CustomButton(
-                        text: _isLogin ? 'Sign In' : 'Sign Up',
+                        text: _isLogin
+                            ? AppLocalizations.of(context)!.signIn
+                            : AppLocalizations.of(context)!.registerButton,
                         onPressed: _handleAuth,
                         isLoading: _isLoading,
                       ),
@@ -201,11 +208,11 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                               thickness: 1,
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'OR',
-                              style: TextStyle(
+                              AppLocalizations.of(context)!.or,
+                              style: const TextStyle(
                                 color: Colors.black54,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -224,7 +231,7 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
 
                       // Google Auth Button
                       CustomButton(
-                        text: 'Continue with Google',
+                        text: AppLocalizations.of(context)!.continueWithGoogle,
                         onPressed: _handleGoogleSignIn,
                         isOutlined: true,
                         icon: Image.asset(
@@ -244,11 +251,11 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                               thickness: 1,
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 16),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'OR',
-                              style: TextStyle(
+                              AppLocalizations.of(context)!.or,
+                              style: const TextStyle(
                                 color: Colors.black54,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -275,8 +282,12 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                           },
                           child: Text(
                             _isLogin
-                                ? "Don't have an account? Sign Up"
-                                : "Already have an account? Sign In",
+                                ? AppLocalizations.of(
+                                    context,
+                                  )!.dontHaveAccountSignUp
+                                : AppLocalizations.of(
+                                    context,
+                                  )!.alreadyHaveAccountSignIn,
                             style: const TextStyle(
                               color: Colors.black87,
                               fontWeight: FontWeight.w600,

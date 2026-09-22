@@ -62,7 +62,7 @@ class SupabaseRepository {
 
   Future<List<Map<String, dynamic>>> getActiveRestaurants() async {
     try {
-      final response = await _client.from('restaurants').select('id, name, colors').eq('is_onboarded', true);
+      final response = await _client.from('restaurants').select('id, name, name_ar, name_en, colors').eq('is_onboarded', true);
       
       return (response as List).map((res) {
         List<dynamic> rawColors = res['colors'] ?? [];
@@ -73,6 +73,8 @@ class SupabaseRepository {
         return {
           'id': res['id'],
           'text': res['name'] ?? 'Unknown',
+          'name_ar': res['name_ar'],
+          'name_en': res['name_en'],
           'colors': parsedColors.map((c) => Color(c)).toList(),
         };
       }).toList();
@@ -90,12 +92,14 @@ class SupabaseRepository {
     }
   }
 
-  Future<void> completeOnboarding(String userId, List<int> colors, String name, String desc) async {
+  Future<void> completeOnboarding(String userId, List<int> colors, String nameAr, String nameEn, String descAr, String descEn) async {
     final existingRest = await _client.from('restaurants').select('id').eq('owner_id', userId).maybeSingle();
     final data = {
       'colors': colors,
-      'name': name,
-      'description': desc,
+      'name_ar': nameAr,
+      'name_en': nameEn,
+      'description_ar': descAr,
+      'description_en': descEn,
       'is_onboarded': true,
     };
 
@@ -122,21 +126,21 @@ class SupabaseRepository {
   Future<Map<String, List<Map<String, String>>>> getRestaurantMenu(String restaurantId) async {
     final response = await _client
         .from('categories')
-        .select('id, name, menu_items(name, price, description, image_url)')
+        .select('id, name, name_ar, name_en, menu_items(name, name_ar, name_en, price, description, description_ar, description_en, image_url)')
         .eq('restaurant_id', restaurantId);
 
     Map<String, List<Map<String, String>>> menuData = {};
     for (var category in response as List) {
-      String categoryName = category['name'];
+      String categoryName = category['name_ar']?.toString() ?? category['name']?.toString() ?? '';
       List<Map<String, String>> itemsList = [];
       var menuItems = category['menu_items'] as List?;
       
       if (menuItems != null) {
         for (var item in menuItems) {
           itemsList.add({
-            'name': item['name'].toString(),
-            'price': '\$${item['price'].toString()}',
-            'description': item['description']?.toString() ?? '',
+            'name': item['name_ar']?.toString() ?? item['name']?.toString() ?? '',
+            'price': item['price'].toString(),
+            'description': item['description_ar']?.toString() ?? item['description']?.toString() ?? '',
             'image_url': item['image_url']?.toString() ?? '',
           });
         }
@@ -151,13 +155,17 @@ class SupabaseRepository {
   Future<List<Map<String, dynamic>>> getRawCategories(String restaurantId) async {
     final response = await _client
         .from('categories')
-        .select('id, name, menu_items(id, name, price, description, image_url)')
+        .select('id, name, name_ar, name_en, menu_items(id, name, name_ar, name_en, price, description, description_ar, description_en, image_url)')
         .eq('restaurant_id', restaurantId);
     return List<Map<String, dynamic>>.from(response);
   }
 
-  Future<void> addCategory(String restaurantId, String name) async {
-    await _client.from('categories').insert({'restaurant_id': restaurantId, 'name': name});
+  Future<void> addCategory(String restaurantId, String nameAr, String nameEn) async {
+    await _client.from('categories').insert({
+      'restaurant_id': restaurantId,
+      'name_ar': nameAr,
+      'name_en': nameEn,
+    });
   }
 
   Future<void> deleteCategory(String categoryId) async {
@@ -177,11 +185,14 @@ class SupabaseRepository {
     return urls;
   }
 
-  Future<void> addMenuItem(String categoryId, String name, String desc, double price, List<String> imageUrls) async {
+  Future<void> addMenuItem(
+      String categoryId, String nameAr, String nameEn, String descAr, String descEn, double price, List<String> imageUrls) async {
     await _client.from('menu_items').insert({
       'category_id': categoryId,
-      'name': name,
-      'description': desc,
+      'name_ar': nameAr,
+      'name_en': nameEn,
+      'description_ar': descAr,
+      'description_en': descEn,
       'price': price,
       'image_url': imageUrls.isNotEmpty ? jsonEncode(imageUrls) : null,
     });

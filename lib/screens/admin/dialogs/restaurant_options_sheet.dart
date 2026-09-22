@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../core/utils/localization_helper.dart';
 
 void showRestaurantOptionsSheet({
   required BuildContext context,
@@ -10,7 +11,7 @@ void showRestaurantOptionsSheet({
     context: context,
     backgroundColor: const Color(0xFF1A1A1A),
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(5)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
     ),
     builder: (ctx) {
       return SafeArea(
@@ -32,7 +33,7 @@ void showRestaurantOptionsSheet({
                   style: TextStyle(color: Colors.redAccent)),
               onTap: () async {
                 Navigator.pop(ctx);
-                _confirmDelete(context, restaurant['id'], restaurant['name'], onDeleteSuccess);
+                _confirmDelete(context, restaurant['id'], context.getLocalized(restaurant, 'name'), onDeleteSuccess);
               },
             ),
           ],

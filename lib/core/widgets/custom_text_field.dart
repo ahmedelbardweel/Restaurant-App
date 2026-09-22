@@ -8,6 +8,7 @@ class CustomTextField extends StatefulWidget {
   final String? Function(String?)? validator;
   final Widget? suffixIcon;
   final int maxLines;
+  final TextAlign textAlign;
 
   const CustomTextField({
     super.key,
@@ -18,6 +19,7 @@ class CustomTextField extends StatefulWidget {
     this.validator,
     this.suffixIcon,
     this.maxLines = 1,
+    this.textAlign = TextAlign.start,
   });
 
   @override
@@ -34,6 +36,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       obscureText: widget.isPassword ? _isObscured : false,
       keyboardType: widget.keyboardType,
       maxLines: widget.isPassword ? 1 : widget.maxLines,
+      textAlign: widget.textAlign,
       style: const TextStyle(color: Colors.black87, fontSize: 15),
       validator: widget.validator,
       decoration: InputDecoration(

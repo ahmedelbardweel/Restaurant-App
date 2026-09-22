@@ -16,20 +16,36 @@ class AppTheme {
         error: AppColors.error,
       ),
       textTheme: TextTheme(
-        displayLarge: AppColors.textPrimaryLight.let((c) => AppTextStyles.displayLarge.copyWith(color: c)),
-        displayMedium: AppColors.textPrimaryLight.let((c) => AppTextStyles.displayMedium.copyWith(color: c)),
-        displaySmall: AppColors.textPrimaryLight.let((c) => AppTextStyles.displaySmall.copyWith(color: c)),
-        bodyLarge: AppColors.textPrimaryLight.let((c) => AppTextStyles.bodyLarge.copyWith(color: c)),
-        bodyMedium: AppColors.textPrimaryLight.let((c) => AppTextStyles.bodyMedium.copyWith(color: c)),
-        bodySmall: AppColors.textSecondaryLight.let((c) => AppTextStyles.bodySmall.copyWith(color: c)),
-        labelLarge: AppColors.textPrimaryLight.let((c) => AppTextStyles.labelLarge.copyWith(color: c)),
+        displayLarge: AppColors.textPrimaryLight.let(
+          (c) => AppTextStyles.displayLarge.copyWith(color: c),
+        ),
+        displayMedium: AppColors.textPrimaryLight.let(
+          (c) => AppTextStyles.displayMedium.copyWith(color: c),
+        ),
+        displaySmall: AppColors.textPrimaryLight.let(
+          (c) => AppTextStyles.displaySmall.copyWith(color: c),
+        ),
+        bodyLarge: AppColors.textPrimaryLight.let(
+          (c) => AppTextStyles.bodyLarge.copyWith(color: c),
+        ),
+        bodyMedium: AppColors.textPrimaryLight.let(
+          (c) => AppTextStyles.bodyMedium.copyWith(color: c),
+        ),
+        bodySmall: AppColors.textSecondaryLight.let(
+          (c) => AppTextStyles.bodySmall.copyWith(color: c),
+        ),
+        labelLarge: AppColors.textPrimaryLight.let(
+          (c) => AppTextStyles.labelLarge.copyWith(color: c),
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surfaceLight,
         foregroundColor: AppColors.textPrimaryLight,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.displaySmall.copyWith(color: AppColors.textPrimaryLight),
+        titleTextStyle: AppTextStyles.displaySmall.copyWith(
+          color: AppColors.textPrimaryLight,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -50,8 +66,12 @@ class AppTheme {
           borderRadius: BorderRadius.circular(50),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryLight),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryLight),
+        labelStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondaryLight,
+        ),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondaryLight,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -89,42 +109,62 @@ class AppTheme {
         error: AppColors.error,
       ),
       textTheme: TextTheme(
-        displayLarge: AppColors.textPrimaryDark.let((c) => AppTextStyles.displayLarge.copyWith(color: c)),
-        displayMedium: AppColors.textPrimaryDark.let((c) => AppTextStyles.displayMedium.copyWith(color: c)),
-        displaySmall: AppColors.textPrimaryDark.let((c) => AppTextStyles.displaySmall.copyWith(color: c)),
-        bodyLarge: AppColors.textPrimaryDark.let((c) => AppTextStyles.bodyLarge.copyWith(color: c)),
-        bodyMedium: AppColors.textPrimaryDark.let((c) => AppTextStyles.bodyMedium.copyWith(color: c)),
-        bodySmall: AppColors.textSecondaryDark.let((c) => AppTextStyles.bodySmall.copyWith(color: c)),
-        labelLarge: AppColors.textPrimaryDark.let((c) => AppTextStyles.labelLarge.copyWith(color: c)),
+        displayLarge: AppColors.textPrimaryDark.let(
+          (c) => AppTextStyles.displayLarge.copyWith(color: c),
+        ),
+        displayMedium: AppColors.textPrimaryDark.let(
+          (c) => AppTextStyles.displayMedium.copyWith(color: c),
+        ),
+        displaySmall: AppColors.textPrimaryDark.let(
+          (c) => AppTextStyles.displaySmall.copyWith(color: c),
+        ),
+        bodyLarge: AppColors.textPrimaryDark.let(
+          (c) => AppTextStyles.bodyLarge.copyWith(color: c),
+        ),
+        bodyMedium: AppColors.textPrimaryDark.let(
+          (c) => AppTextStyles.bodyMedium.copyWith(color: c),
+        ),
+        bodySmall: AppColors.textSecondaryDark.let(
+          (c) => AppTextStyles.bodySmall.copyWith(color: c),
+        ),
+        labelLarge: AppColors.textPrimaryDark.let(
+          (c) => AppTextStyles.labelLarge.copyWith(color: c),
+        ),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.surfaceDark,
         foregroundColor: AppColors.textPrimaryDark,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: AppTextStyles.displaySmall.copyWith(color: AppColors.textPrimaryDark),
+        titleTextStyle: AppTextStyles.displaySmall.copyWith(
+          color: AppColors.textPrimaryDark,
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceDark,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(50),
           borderSide: const BorderSide(color: AppColors.borderDark),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(50),
           borderSide: const BorderSide(color: AppColors.borderDark),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(50),
           borderSide: const BorderSide(color: AppColors.primary),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(5),
+          borderRadius: BorderRadius.circular(50),
           borderSide: const BorderSide(color: AppColors.error),
         ),
-        labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
-        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondaryDark),
+        labelStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondaryDark,
+        ),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(
+          color: AppColors.textSecondaryDark,
+        ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

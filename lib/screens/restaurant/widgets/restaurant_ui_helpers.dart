@@ -1,87 +1,34 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-void showCustomBottomSheet({
-  required BuildContext context,
-  required String title,
-  required Widget child,
-}) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1A1A1A),
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(20),
-            ),
-            border: Border.all(color: Colors.white12, width: 1),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  margin: const EdgeInsets.only(bottom: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white24,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              Text(
-                title,
-                style: GoogleFonts.originalSurfer(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-              child,
-              const SizedBox(height: 10),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
 
 Widget buildInput({
   required TextEditingController controller,
   required String hint,
   required IconData icon,
   bool isNumber = false,
+  Color? titleColor,
 }) {
+  Color textColor = titleColor ?? Colors.white;
+  Color bgColor = titleColor == Colors.black ? Colors.white54 : Colors.black54;
+
   return TextField(
     controller: controller,
-    style: const TextStyle(color: Colors.white, fontSize: 16),
+    style: TextStyle(color: textColor, fontSize: 16),
     keyboardType: isNumber
         ? const TextInputType.numberWithOptions(decimal: true)
         : TextInputType.text,
     decoration: InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.white38),
+      hintStyle: TextStyle(color: textColor.withValues(alpha: 0.6)),
       filled: true,
-      fillColor: Colors.black54,
+      fillColor: bgColor,
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5),
-        borderSide: const BorderSide(color: Colors.white12),
+        borderSide: BorderSide(color: textColor.withValues(alpha: 0.2)),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(5),
-        borderSide: const BorderSide(color: Colors.white),
+        borderSide: BorderSide(color: textColor),
       ),
     ),
   );

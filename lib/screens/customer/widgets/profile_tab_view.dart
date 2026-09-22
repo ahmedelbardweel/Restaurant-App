@@ -3,8 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../logic/auth_bloc/auth_bloc.dart';
 import '../../../logic/auth_bloc/auth_state.dart';
 import '../../../logic/auth_bloc/auth_event.dart';
-import '../../auth/dialogs/customer_auth_sheet.dart';
+import '../../../logic/locale_bloc/locale_cubit.dart';
+import '../../../core/widgets/sheets/app_bottom_sheets.dart';
 import '../../../core/widgets/custom_button.dart';
+import 'package:splash_screen/l10n/app_localizations.dart';
 
 class ProfileTabView extends StatelessWidget {
   final Color titleColor;
@@ -52,17 +54,58 @@ class ProfileTabView extends StatelessWidget {
                         // Name & Email
                         Text(
                           name,
-                          style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: titleColor,
-                          ),
+                          style: Theme.of(context).textTheme.displaySmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: titleColor,
+                              ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           state.user.email ?? '',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: titleColor.withValues(alpha: 0.7),
-                            fontWeight: FontWeight.w500,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: titleColor.withValues(alpha: 0.7),
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Language Switcher
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 0),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(50),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(50),
+                            ),
+                            leading: Image.asset(
+                              context.read<LocaleCubit>().state.languageCode ==
+                                      'ar'
+                                  ? 'assets/images/flag_ps.png'
+                                  : 'assets/images/flag_us.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                            title: Text(
+                              AppLocalizations.of(context)!.language,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                                fontSize: 18,
+                              ),
+                            ),
+                            subtitle: Text(
+                              AppLocalizations.of(context)!.changeLanguageDesc,
+                              style: const TextStyle(color: Colors.black54),
+                            ),
+                            onTap: () {
+                              AppBottomSheets.showLanguageSheet(context);
+                            },
                           ),
                         ),
                       ],
@@ -76,7 +119,7 @@ class ProfileTabView extends StatelessWidget {
                     right: 10,
                   ),
                   child: CustomButton(
-                    text: 'Sign Out',
+                    text: AppLocalizations.of(context)!.logout,
                     backgroundColor: const Color.fromARGB(255, 59, 1, 1),
                     onPressed: () {
                       context.read<AuthBloc>().add(AuthSignOutRequested());
@@ -93,7 +136,7 @@ class ProfileTabView extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'Not Logged In',
+                  AppLocalizations.of(context)!.notLoggedIn,
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: titleColor,
@@ -102,7 +145,7 @@ class ProfileTabView extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  'Sign in to manage your profile and orders.',
+                  AppLocalizations.of(context)!.signInToManageProfile,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     color: titleColor.withValues(alpha: 0.7),
                   ),
@@ -110,15 +153,12 @@ class ProfileTabView extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 CustomButton(
-                  text: 'Sign In',
+                  text: AppLocalizations.of(context)!.signIn,
                   backgroundColor: buttonColor,
                   onPressed: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      useSafeArea: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (_) => CustomerAuthSheet(onAuthSuccess: () {}),
+                    AppBottomSheets.showCustomerAuthSheet(
+                      context,
+                      onAuthSuccess: () {},
                     );
                   },
                 ),

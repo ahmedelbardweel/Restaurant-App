@@ -18,7 +18,7 @@ void showCreateRestaurantDialog({
     isScrollControlled: true,
     backgroundColor: const Color(0xFF1E1E1E),
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
     ),
     builder: (ctx) {
       return StatefulBuilder(builder: (context, setSheetState) {

@@ -1,17 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:splash_screen/l10n/app_localizations.dart';
 import 'package:splash_screen/screens/splash_loader.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import '../../../../core/widgets/custom_button.dart';
 import '../../../../core/widgets/custom_text_field.dart';
 import '../../../../data/repositories/supabase_repository.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../logic/locale_bloc/locale_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../core/widgets/sheets/app_bottom_sheets.dart';
 
 import 'package:splash_screen/core/widgets/custom_loader.dart';
+
 class RestaurantProfileTab extends StatefulWidget {
   final Color titleColor;
   const RestaurantProfileTab({super.key, required this.titleColor});
@@ -25,14 +29,17 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
   bool _isLoading = true;
   bool _isSaving = false;
   bool _isGettingLocation = false;
-  
+
   LatLng? _currentLocation;
   final MapController _mapController = MapController();
 
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _nameArController = TextEditingController();
+  final TextEditingController _nameEnController = TextEditingController();
+  final TextEditingController _descArController = TextEditingController();
+  final TextEditingController _descEnController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _addressArController = TextEditingController();
+  final TextEditingController _addressEnController = TextEditingController();
   final TextEditingController _color1Controller = TextEditingController();
   final TextEditingController _color2Controller = TextEditingController();
 
@@ -48,21 +55,35 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
 
     final profile = await SupabaseRepository().getRestaurantProfile(user.id);
     if (profile != null) {
-      _nameController.text = profile['name'] ?? '';
-      _descriptionController.text = profile['description'] ?? '';
+      _nameArController.text = profile['name_ar'] ?? profile['name'] ?? '';
+      _nameEnController.text = profile['name_en'] ?? '';
+      _descArController.text =
+          profile['description_ar'] ?? profile['description'] ?? '';
+      _descEnController.text = profile['description_en'] ?? '';
       _phoneController.text = profile['phone'] ?? '';
-      _addressController.text = profile['address'] ?? '';
+      _addressArController.text =
+          profile['address_ar'] ?? profile['address'] ?? '';
+      _addressEnController.text = profile['address_en'] ?? '';
 
       if (profile['latitude'] != null && profile['longitude'] != null) {
         _currentLocation = LatLng(
           (profile['latitude'] as num).toDouble(),
           (profile['longitude'] as num).toDouble(),
         );
-      } else if (_addressController.text.isNotEmpty) {
+      } else if (_addressArController.text.isNotEmpty ||
+          _addressEnController.text.isNotEmpty) {
         try {
-          List<Location> locations = await Geocoding().locationFromAddress(_addressController.text);
+          String addr = _addressArController.text.isNotEmpty
+              ? _addressArController.text
+              : _addressEnController.text;
+          List<Location> locations = await Geocoding().locationFromAddress(
+            addr,
+          );
           if (locations.isNotEmpty) {
-            _currentLocation = LatLng(locations[0].latitude, locations[0].longitude);
+            _currentLocation = LatLng(
+              locations[0].latitude,
+              locations[0].longitude,
+            );
           }
         } catch (e) {
           debugPrint('Could not geocode address: $e');
@@ -99,24 +120,28 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
           throw Exception('Location permissions are denied');
         }
       }
-      
+
       if (permission == LocationPermission.deniedForever) {
         throw Exception('Location permissions are permanently denied');
       }
 
       Position position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-          
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
       final latLng = LatLng(position.latitude, position.longitude);
-          
+
       List<Placemark> placemarks = await Geocoding().placemarkFromCoordinates(
-          position.latitude, position.longitude);
-          
+        position.latitude,
+        position.longitude,
+      );
+
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks[0];
         String address = '${place.street}, ${place.locality}, ${place.country}';
         setState(() {
-          _addressController.text = address;
+          _addressArController.text = address;
+          _addressEnController.text = address;
           _currentLocation = latLng;
         });
         _mapController.move(latLng, 15.0);
@@ -124,7 +149,11 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not get location: $e')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.couldNotGetLocation(e.toString()),
+            ),
+          ),
         );
       }
     } finally {
@@ -144,10 +173,13 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
-    final String name = _nameController.text.trim();
-    final String desc = _descriptionController.text.trim();
+    final String nameAr = _nameArController.text.trim();
+    final String nameEn = _nameEnController.text.trim();
+    final String descAr = _descArController.text.trim();
+    final String descEn = _descEnController.text.trim();
     final String phone = _phoneController.text.trim();
-    final String address = _addressController.text.trim();
+    final String addressAr = _addressArController.text.trim();
+    final String addressEn = _addressEnController.text.trim();
 
     // Parse colors
     final String c1 = _color1Controller.text.trim().replaceAll('#', '');
@@ -159,10 +191,13 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
     final List<int> colors = [color1, color2];
 
     final data = {
-      'name': name,
-      'description': desc,
+      'name_ar': nameAr,
+      'name_en': nameEn,
+      'description_ar': descAr,
+      'description_en': descEn,
       'phone': phone,
-      'address': address,
+      'address_ar': addressAr,
+      'address_en': addressEn,
       'colors': colors,
     };
 
@@ -175,14 +210,22 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
       await SupabaseRepository().updateRestaurantInfo(user.id, data);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully!')),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.profileUpdatedSuccessfully,
+            ),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error updating profile: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context)!.errorUpdatingProfile(e.toString()),
+            ),
+          ),
+        );
       }
     } finally {
       if (mounted) {
@@ -195,16 +238,22 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
+    _nameArController.dispose();
+    _nameEnController.dispose();
+    _descArController.dispose();
+    _descEnController.dispose();
     _phoneController.dispose();
-    _addressController.dispose();
+    _addressArController.dispose();
+    _addressEnController.dispose();
     _color1Controller.dispose();
     _color2Controller.dispose();
     super.dispose();
   }
 
-  Widget _buildColorPickerField(String label, TextEditingController controller) {
+  Widget _buildColorPickerField(
+    String label,
+    TextEditingController controller,
+  ) {
     Color currentColor = Colors.white;
     if (controller.text.isNotEmpty && controller.text.length == 8) {
       try {
@@ -213,75 +262,29 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
     }
 
     return GestureDetector(
-      onTap: () {
-        showModalBottomSheet(
+      onTap: () async {
+        final Color? selectedColor = await AppBottomSheets.showColorPickerSheet(
           context: context,
-          isScrollControlled: true,
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          builder: (context) {
-            Color tempColor = currentColor;
-            return Padding(
-              padding: EdgeInsets.only(
-                left: 20.0,
-                right: 20.0,
-                top: 20.0,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 20.0,
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Select $label Color', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 20),
-                  ColorPicker(
-                    pickerColor: currentColor,
-                    onColorChanged: (color) {
-                      tempColor = color;
-                    },
-                    enableAlpha: false,
-                    displayThumbColor: true,
-                    showLabel: true,
-                    paletteType: PaletteType.hsv,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-                      ),
-                      const SizedBox(width: 10),
-                      ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            controller.text = tempColor.toARGB32().toRadixString(16).toUpperCase().padLeft(8, '0');
-                          });
-                          Navigator.of(context).pop();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: const Text('Save', style: TextStyle(color: Colors.white)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          },
+          initialColor: currentColor,
+          label: label,
         );
+
+        if (selectedColor != null && mounted) {
+          setState(() {
+            controller.text = selectedColor
+                .toARGB32()
+                .toRadixString(16)
+                .toUpperCase()
+                .padLeft(8, '0');
+          });
+        }
       },
       child: Container(
         height: 50,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 10),
         decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.shade400),
-          borderRadius: BorderRadius.circular(25), // match text field style
+          borderRadius: BorderRadius.circular(10), // match text field style
           color: Colors.white,
         ),
         child: Row(
@@ -300,7 +303,9 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
               child: Text(
                 controller.text.isNotEmpty ? controller.text : label,
                 style: TextStyle(
-                  color: controller.text.isNotEmpty ? Colors.black87 : Colors.grey,
+                  color: controller.text.isNotEmpty
+                      ? Colors.black87
+                      : Colors.grey,
                   fontSize: 14,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -318,6 +323,7 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
       return Center(child: CustomLoader());
     }
 
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
         Expanded(
@@ -332,31 +338,81 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  // Language Switcher
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(50),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: ListTile(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      leading: Image.asset(
+                        context.read<LocaleCubit>().state.languageCode == 'ar'
+                            ? 'assets/images/flag_ps.png'
+                            : 'assets/images/flag_us.png',
+                        width: 24,
+                        height: 24,
+                      ),
+                      title: Text(
+                        l10n.language,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
+                      subtitle: Text(
+                        l10n.changeLanguageDesc,
+                        style: const TextStyle(color: Colors.black54),
+                      ),
+                      onTap: () {
+                        AppBottomSheets.showLanguageSheet(context);
+                      },
+                    ),
+                  ),
                   const SizedBox(width: double.infinity),
                   const SizedBox(height: 10),
                   CustomTextField(
-                    controller: _nameController,
-                    hintText: 'Restaurant Name',
+                    controller: _nameArController,
+                    hintText: l10n.restNameAr,
+                    validator: Validators.required,
+                    textAlign: TextAlign.right,
+                  ),
+                  const SizedBox(height: 10),
+                  CustomTextField(
+                    controller: _nameEnController,
+                    hintText: l10n.restNameEn,
                     validator: Validators.required,
                   ),
                   const SizedBox(height: 10),
                   CustomTextField(
-                    controller: _descriptionController,
-                    hintText: 'Description',
+                    controller: _descArController,
+                    hintText: l10n.restDescAr,
+                    textAlign: TextAlign.right,
+                    maxLines: 4,
+                  ),
+                  const SizedBox(height: 10),
+                  CustomTextField(
+                    controller: _descEnController,
+                    hintText: l10n.restDescEn,
                     maxLines: 4,
                   ),
                   const SizedBox(height: 10),
                   CustomTextField(
                     controller: _phoneController,
-                    hintText: 'Phone Number',
+                    hintText: l10n.phone,
                     keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 10),
                   CustomTextField(
-                    controller: _addressController,
-                    hintText: 'Address',
+                    controller: _addressArController,
+                    hintText: l10n.addressAr,
+                    textAlign: TextAlign.right,
                     maxLines: 2,
                     suffixIcon: _isGettingLocation
                         ? const Padding(
@@ -368,9 +424,19 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
                             ),
                           )
                         : IconButton(
-                            icon: const Icon(Icons.my_location, size: 20, color: Colors.blueAccent),
+                            icon: const Icon(
+                              Icons.my_location,
+                              size: 20,
+                              color: Colors.blueAccent,
+                            ),
                             onPressed: _getCurrentLocation,
                           ),
+                  ),
+                  const SizedBox(height: 10),
+                  CustomTextField(
+                    controller: _addressEnController,
+                    hintText: l10n.addressEn,
+                    maxLines: 2,
                   ),
                   if (_currentLocation != null) ...[
                     const SizedBox(height: 10),
@@ -385,29 +451,35 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
                         borderRadius: BorderRadius.circular(50),
                         child: RepaintBoundary(
                           child: FlutterMap(
-                          mapController: _mapController,
-                          options: MapOptions(
-                            initialCenter: _currentLocation!,
-                            initialZoom: 15.0,
+                            mapController: _mapController,
+                            options: MapOptions(
+                              initialCenter: _currentLocation!,
+                              initialZoom: 15.0,
+                            ),
+                            children: [
+                              TileLayer(
+                                urlTemplate:
+                                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                userAgentPackageName:
+                                    'com.example.splash_screen',
+                              ),
+                              MarkerLayer(
+                                markers: [
+                                  Marker(
+                                    point: _currentLocation!,
+                                    width: 40,
+                                    height: 40,
+                                    child: const Icon(
+                                      Icons.location_pin,
+                                      color: Colors.red,
+                                      size: 40,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-                          children: [
-                            TileLayer(
-                              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                              userAgentPackageName: 'com.example.splash_screen',
-                            ),
-                            MarkerLayer(
-                              markers: [
-                                Marker(
-                                  point: _currentLocation!,
-                                  width: 40,
-                                  height: 40,
-                                  child: const Icon(Icons.location_pin, color: Colors.red, size: 40),
-                                ),
-                              ],
-                            ),
-                          ],
                         ),
-                      ),
                       ),
                     ),
                   ],
@@ -415,36 +487,37 @@ class _RestaurantProfileTabState extends State<RestaurantProfileTab> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildColorPickerField('Primary', _color1Controller),
+                        child: _buildColorPickerField(
+                          l10n.primaryColor,
+                          _color1Controller,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
-                        child: _buildColorPickerField('Secondary', _color2Controller),
+                        child: _buildColorPickerField(
+                          l10n.secondaryColor,
+                          _color2Controller,
+                        ),
                       ),
                     ],
                   ),
-
                 ],
               ),
             ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(
-            bottom: 110,
-            left: 10,
-            right: 10,
-          ),
+          padding: const EdgeInsets.only(bottom: 110, left: 10, right: 10),
           child: Column(
             children: [
               CustomButton(
-                text: _isSaving ? 'Saving...' : 'Save Changes',
+                text: _isSaving ? l10n.saving : l10n.saveChanges,
                 onPressed: _isSaving ? null : _saveProfileData,
                 isLoading: _isSaving,
               ),
               const SizedBox(height: 5),
               CustomButton(
-                text: 'Sign Out',
+                text: l10n.logout,
                 backgroundColor: const Color.fromARGB(255, 59, 1, 1),
                 onPressed: () async {
                   await Supabase.instance.client.auth.signOut();
