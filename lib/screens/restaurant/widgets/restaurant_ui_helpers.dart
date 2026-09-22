@@ -73,7 +73,6 @@ Widget buildInput({
     decoration: InputDecoration(
       hintText: hint,
       hintStyle: const TextStyle(color: Colors.white38),
-      prefixIcon: Icon(icon, color: Colors.white54),
       filled: true,
       fillColor: Colors.black54,
       enabledBorder: OutlineInputBorder(

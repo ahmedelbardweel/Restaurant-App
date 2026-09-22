@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 class CustomButton extends StatelessWidget {
   final String text;
   final VoidCallback? onPressed;
   final bool isLoading;
   final bool isOutlined;
   final Widget? icon;
+  final Color? backgroundColor;
 
   const CustomButton({
     super.key,
@@ -14,6 +16,7 @@ class CustomButton extends StatelessWidget {
     this.isLoading = false,
     this.isOutlined = false,
     this.icon,
+    this.backgroundColor,
   });
 
   @override
@@ -29,25 +32,10 @@ class CustomButton extends StatelessWidget {
               ? const SizedBox(
                   width: 24,
                   height: 24,
-                  child: CircularProgressIndicator(
-                    color: Colors.black87,
-                    strokeWidth: 2,
-                  ),
+                  child: CustomLoader(size: 8),
                 )
-              : Text(
-                  text,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: Colors.grey.shade300),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(5), // Radius 5 as requested
-            ),
-          ),
+              : Text(text),
+
         ),
       );
     }
@@ -57,21 +45,14 @@ class CustomButton extends StatelessWidget {
       height: 50,
       child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.black87,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(5), // Radius 5 as requested
-          ),
-          elevation: 0,
-        ),
+        style: backgroundColor != null
+            ? ElevatedButton.styleFrom(backgroundColor: backgroundColor)
+            : null,
         child: isLoading
             ? const SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+                child: CustomLoader(size: 8),
               )
             : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -80,14 +61,7 @@ class CustomButton extends StatelessWidget {
                     icon!,
                     const SizedBox(width: 8),
                   ],
-                  Text(
-                    text,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
+                  Text(text),
                 ],
               ),
       ),

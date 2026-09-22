@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 
 void showCreateRestaurantDialog({
   required BuildContext context,
@@ -212,8 +213,7 @@ void showCreateRestaurantDialog({
                         ? const SizedBox(
                             width: 16,
                             height: 16,
-                            child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2))
+                            child: CustomLoader(size: 8))
                         : const Text('Create',
                             style: TextStyle(color: Colors.white)),
                   ),

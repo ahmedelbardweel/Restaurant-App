@@ -19,11 +19,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
     // Listen to Supabase Auth Changes
     _authSubscription = _repository.authStateChanges.listen((data) {
-      if (data.session == null) {
-        if (!isClosed) add(AuthSignOutRequested());
-      } else {
-        if (!isClosed) add(AuthCheckRequested());
-      }
+      if (!isClosed) add(AuthCheckRequested());
     });
   }
 

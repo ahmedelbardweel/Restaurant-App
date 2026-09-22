@@ -5,7 +5,9 @@ import 'package:palette_generator/palette_generator.dart';
 import 'package:splash_screen/data/repositories/supabase_repository.dart';
 import 'package:splash_screen/screens/restaurant/restaurant_dashboard_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:splash_screen/core/widgets/custom_text_field.dart';
 
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 class OnboardingSheet extends StatefulWidget {
   const OnboardingSheet({super.key});
 
@@ -105,7 +107,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
 
     try {
       final userId = Supabase.instance.client.auth.currentUser!.id;
-      final intColors = _selectedColors.map((c) => c.value).toList();
+      final intColors = _selectedColors.map((c) => c.toARGB32()).toList();
 
       await SupabaseRepository().completeOnboarding(
         userId,
@@ -228,10 +230,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2,
-                        ),
+                        child: CustomLoader(size: 8),
                       )
                     : Text(
                         _currentPage == 2 ? 'Complete Setup' : 'Next',
@@ -323,7 +322,7 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
                     boxShadow: [
                       if (isSelected)
                         BoxShadow(
-                          color: color.withOpacity(0.5),
+                          color: color.withValues(alpha: 0.5),
                           blurRadius: 10,
                           spreadRadius: 2,
                         ),
@@ -347,25 +346,15 @@ class _OnboardingSheetState extends State<OnboardingSheet> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          TextField(
+          CustomTextField(
             controller: _nameController,
-            decoration: InputDecoration(
-              labelText: 'Restaurant Name',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
+            hintText: 'Restaurant Name',
             ),
-          ),
           const SizedBox(height: 20),
-          TextField(
+          CustomTextField(
             controller: _descController,
+            hintText: 'Description',
             maxLines: 3,
-            decoration: InputDecoration(
-              labelText: 'Description',
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
-            ),
           ),
         ],
       ),

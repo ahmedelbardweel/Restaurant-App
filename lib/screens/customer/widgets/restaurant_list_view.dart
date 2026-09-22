@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 
 import '../../../data/repositories/supabase_repository.dart';
 import '../../auth/dialogs/customer_auth_sheet.dart';
@@ -93,7 +93,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
       body: Stack(
         children: [
           if (_isLoading)
-            const Center(child: CircularProgressIndicator(color: Colors.white))
+            const Center(child: CustomLoader())
           else if (_words.isEmpty)
             const Center(
               child: Text(
@@ -114,8 +114,8 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                   final double translateY =
                       (size.height / 2) - (progress * _itemHeight) - 28;
 
-                  final double Ry = size.height * 0.65;
-                  const double Rx = 150.0;
+                  final double ry = size.height * 0.65;
+                  const double rx = 150.0;
                   const double baseLeft = 30.0;
 
                   return Transform.translate(
@@ -128,8 +128,8 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                               double dy = (i - progress) * _itemHeight;
 
                               double dx = 0;
-                              if (dy.abs() < Ry) {
-                                dx = Rx * math.sqrt(1 - (dy * dy) / (Ry * Ry));
+                              if (dy.abs() < ry) {
+                                dx = rx * math.sqrt(1 - (dy * dy) / (ry * ry));
                               }
 
                               double wordLeft = baseLeft + dx;
@@ -229,7 +229,7 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                 child: BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
                   child: Container(
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withValues(alpha: 0.3),
                     child: SafeArea(
                       bottom: false,
                       child: Padding(
@@ -237,10 +237,9 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                         child: Center(
                           child: Text(
                             'Choose your restaurant',
-                            style: GoogleFonts.originalSurfer(
+                            style: Theme.of(context).textTheme.displaySmall?.copyWith(
                               color: Colors.white,
                               fontSize: 22,
-                              fontWeight: FontWeight.w600,
                               letterSpacing: 1.2,
                             ),
                           ),
@@ -270,11 +269,11 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.7),
+                      color: Colors.black.withValues(alpha: 0.7),
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -282,11 +281,11 @@ class _RestaurantListScreenState extends State<RestaurantListScreen> {
                     ),
                     child: Text(
                       'Restaurant Owner? Login Here',
-                      style: GoogleFonts.originalSurfer(
-                        color: Colors.white.withOpacity(0.9),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.9),
                         fontSize: 15,
                         decoration: TextDecoration.underline,
-                        decorationColor: Colors.white.withOpacity(0.9),
+                        decorationColor: Colors.white.withValues(alpha: 0.9),
                       ),
                     ),
                   ),

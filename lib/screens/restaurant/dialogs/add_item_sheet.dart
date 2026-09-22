@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../data/repositories/supabase_repository.dart';
 import '../widgets/restaurant_ui_helpers.dart';
 
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 void showAddItemSheet({
   required BuildContext context,
   required String categoryId,
@@ -134,7 +135,7 @@ void showAddItemSheet({
             const SizedBox(height: 20),
             isUploading
                 ? Center(
-                    child: CircularProgressIndicator(color: brandColor),
+                    child: CustomLoader(),
                   )
                 : buildPrimaryButton(
                     text: 'Add Item',

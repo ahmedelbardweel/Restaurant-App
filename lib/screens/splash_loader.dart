@@ -65,7 +65,7 @@ class _SplashLoaderScreenState extends State<SplashLoaderScreen>
           }
         }
       } catch (e) {
-        print('Error getting role in splash: $e');
+        debugPrint('Error getting role in splash: $e');
       }
     }
 

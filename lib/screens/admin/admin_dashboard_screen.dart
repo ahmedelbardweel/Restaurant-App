@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../customer/widgets/restaurant_list_view.dart';
 import 'dialogs/create_restaurant_dialog.dart';
 import 'dialogs/restaurant_options_sheet.dart';
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -71,7 +72,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         child: const Icon(Icons.add, color: Colors.white),
       ),
       body: _isLoading
-          ? const Center(child: CircularProgressIndicator(color: Colors.white))
+          ? const Center(child: CustomLoader())
           : _restaurants.isEmpty
               ? const Center(
                   child: Text('No restaurants created yet.', style: TextStyle(color: Colors.grey, fontSize: 16)),

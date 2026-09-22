@@ -20,7 +20,6 @@ class CustomerAuthSheet extends StatefulWidget {
 class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final bool _isPasswordVisible = false;
   bool _isLoading = false;
   bool _isLogin = true; // Toggle between Login and Sign Up
 
@@ -173,7 +172,6 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                       CustomTextField(
                         controller: _emailController,
                         hintText: 'Email Address',
-                        prefixIcon: Icons.email_outlined,
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 16),
@@ -182,7 +180,6 @@ class _CustomerAuthSheetState extends State<CustomerAuthSheet> {
                       CustomTextField(
                         controller: _passwordController,
                         hintText: 'Password',
-                        prefixIcon: Icons.lock_outline,
                         isPassword: true,
                       ),
                       const SizedBox(height: 24),

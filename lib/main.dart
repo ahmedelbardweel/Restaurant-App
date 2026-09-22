@@ -13,7 +13,7 @@ void main() async {
 
   await Supabase.initialize(
     url: 'https://srawlltewvegexdjbsxy.supabase.co',
-    anonKey:
+    publishableKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNyYXdsbHRld3ZlZ2V4ZGpic3h5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk5NzE1NjAsImV4cCI6MjEwNTU0NzU2MH0.8puCn7lM2-yFBJ8J2w-QaeO5RQhLugADbr0TAVlDf0o',
   );
 
@@ -41,6 +41,17 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       home: const SplashLoaderScreen(),
+      builder: (context, child) {
+        // Global scale down (Zoom out) by reducing the text scale factor.
+        // This is the safest way to "shrink" the UI without breaking constraints.
+        final mediaQueryData = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQueryData.copyWith(
+            textScaler: const TextScaler.linear(0.85),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }

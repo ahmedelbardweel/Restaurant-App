@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../data/repositories/supabase_repository.dart';
 import '../widgets/restaurant_ui_helpers.dart';
 
+import 'package:splash_screen/core/widgets/custom_loader.dart';
 void showAddCategorySheet({
   required BuildContext context,
   required String restaurantId,
@@ -25,7 +26,7 @@ void showAddCategorySheet({
           ),
           const SizedBox(height: 20),
           isLoading
-              ? CircularProgressIndicator(color: brandColor)
+              ? CustomLoader()
               : buildPrimaryButton(
                   text: 'Create Category',
                   color: brandColor,
